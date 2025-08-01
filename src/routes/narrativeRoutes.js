@@ -1,69 +1,66 @@
 const express = require('express');
 const {
-  createGenre,
-  getAllGenres,
-  getGenreById,
-  getGenreBySlug,
-  updateGenre,
-  deleteGenre,
-  toggleGenreStatus
-} = require('../controllers/genreController');
+  createNarrative,
+  getAllNarratives,
+  getNarrativeById,
+  getNarrativeBySlug,
+  updateNarrative,
+  deleteNarrative,
+  toggleNarrativeStatus,
+} = require('../controllers/narrativeController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 const {
-  validateGenre,
+  validateNarrative,
   validateObjectId,
   validatePagination
 } = require('../middleware/validator');
 
 const router = express.Router();
 
-
-router.get('/slug/:slug', getGenreBySlug);
+router.get('/slug/:slug', getNarrativeBySlug);
 
 // Admin-only routes
 router.post('/', 
   authenticate,
   authorize('admin'),
-  validateGenre,
-  createGenre
+  validateNarrative,
+  createNarrative
 );
 
 router.get('/', 
   authenticate,
-  authorize('user','admin'),
   validatePagination,
-  getAllGenres
+  getAllNarratives
 );
 
 router.get('/:id', 
   authenticate,
-  authorize('admin'),
   validateObjectId,
-  getGenreById
+  getNarrativeById
 );
 
 router.put('/:id', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  validateGenre,
-  updateGenre
+  validateNarrative,
+  updateNarrative
 );
 
 router.delete('/:id', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  deleteGenre
+  deleteNarrative
 );
 
 router.patch('/:id/toggle', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  toggleGenreStatus
+  toggleNarrativeStatus
 );
 
 module.exports = router; 

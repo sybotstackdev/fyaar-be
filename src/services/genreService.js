@@ -75,7 +75,7 @@ const getAllGenres = async (options = {}) => {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      genres: genres.map(genre => genre.getPublicProfile()),
+      results: genres.map(genre => genre.getPublicProfile()),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -191,19 +191,6 @@ const deleteGenre = async (genreId) => {
   }
 };
 
-/**
- * Get active genres only
- * @returns {Array} Active genres
- */
-const getActiveGenres = async () => {
-  try {
-    const genres = await Genre.find({ isActive: true }).sort({ title: 1 });
-    return genres.map(genre => genre.getPublicProfile());
-  } catch (error) {
-    logger.error('Get active genres error:', error.message);
-    throw error;
-  }
-};
 
 module.exports = {
   createGenre,
@@ -212,5 +199,4 @@ module.exports = {
   getGenreBySlug,
   updateGenre,
   deleteGenre,
-  getActiveGenres
 }; 

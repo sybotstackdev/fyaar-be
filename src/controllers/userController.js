@@ -140,8 +140,6 @@ const logout = asyncHandler(async (req, res) => {
  * POST /api/auth/refresh
  */
 const refreshToken = asyncHandler(async (req, res) => {
-  // This would typically verify the refresh token and issue a new access token
-  // For now, we'll just return the current user info
   const user = await UserService.getProfile(req.user._id);
 
   return ApiResponse.success(res, 200, 'Token refreshed successfully', { user });

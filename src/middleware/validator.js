@@ -109,6 +109,53 @@ const validateGenre = [
 ];
 
 /**
+ * Validate spice mood creation/update data
+ */
+const validateSpiceMood = [
+  body('comboName')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Combo name must be between 2 and 100 characters'),
+  
+  body('moodSpiceBlend')
+    .isArray({ min: 1 })
+    .withMessage('Mood + Spice Blend must be an array with at least one item'),
+  
+  body('moodSpiceBlend.*')
+    .trim()
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Each mood + spice blend item must be between 1 and 200 characters'),
+  
+  body('intensity')
+    .isIn(['Low', 'Low–Med', 'Medium', 'High', 'Very High'])
+    .withMessage('Intensity must be one of: Low, Low–Med, Medium, High, Very High'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Description must be between 10 and 1000 characters'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validate narrative creation/update data
+ */
+const validateNarrative = [
+  body('optionLabel')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Option label must be between 2 and 100 characters'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Description must be between 10 and 500 characters'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate MongoDB ObjectId
  */
 const validateObjectId = [
@@ -142,6 +189,8 @@ module.exports = {
   validateLogin,
   validateUserUpdate,
   validateGenre,
+  validateSpiceMood,
+  validateNarrative,
   validateObjectId,
   validatePagination
 }; 

@@ -14,7 +14,6 @@ A simple and clean Node.js boilerplate with MongoDB, Express, and JWT authentica
 - **CORS** - Cross-Origin Resource Sharing support
 - **Security Headers** - Helmet for security
 - **Compression** - Response compression
-- **Testing** - Jest and Supertest for testing
 - **Genre Management** - Admin-only genre CRUD operations
 
 ## Project Structure
@@ -119,6 +118,25 @@ npm run seed:genres
 - `DELETE /api/genres/:id` - Delete genre (admin only)
 - `PATCH /api/genres/:id/toggle` - Toggle genre status (admin only)
 
+### Spice and Mood Setting Management
+- `GET /api/spice-moods/slug/:slug` - Get spice mood by slug (public)
+- `POST /api/spice-moods` - Create new spice mood setting (admin only)
+- `GET /api/spice-moods` - Get all spice mood settings with pagination (admin/user)
+- `GET /api/spice-moods/:id` - Get spice mood by ID (admin only)
+- `PUT /api/spice-moods/:id` - Update spice mood setting (admin only)
+- `DELETE /api/spice-moods/:id` - Delete spice mood setting (admin only)
+- `PATCH /api/spice-moods/:id/toggle` - Toggle spice mood status (admin only)
+
+### Narrative Management
+- `GET /api/narratives/active` - Get active narratives (public)
+- `GET /api/narratives/slug/:slug` - Get narrative by slug (public)
+- `POST /api/narratives` - Create new narrative option (admin only)
+- `GET /api/narratives` - Get all narratives with pagination (admin only)
+- `GET /api/narratives/:id` - Get narrative by ID (admin only)
+- `PUT /api/narratives/:id` - Update narrative (admin only)
+- `DELETE /api/narratives/:id` - Delete narrative (admin only)
+- `PATCH /api/narratives/:id/toggle` - Toggle narrative status (admin only)
+
 ### Health Check
 - `GET /health` - Server health status
 
@@ -126,10 +144,8 @@ npm run seed:genres
 
 - `npm start` - Start production server
 - `npm run dev` - Start development server with nodemon
-- `npm test` - Run tests
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
-- `npm run seed:genres` - Seed initial genres
 
 ## Environment Variables
 
@@ -184,6 +200,67 @@ The system comes with 11 pre-configured romance genres:
 9. Fake Relationship / Pretend Love
 10. Late Bloom / Healing Romance
 11. Speculative / Sci-Fi / Fantasy Romance
+
+## Spice and Mood Setting System
+
+The application includes a comprehensive spice and mood setting management system:
+
+### Spice Mood Model Features:
+- **Combo Name**: Unique combo name (2-100 characters)
+- **Mood + Spice Blend**: Array of mood and spice elements (1-200 characters each)
+- **Intensity**: Predefined intensity levels (Low, Low–Med, Medium, High, Very High)
+- **Description**: Detailed description (10-1000 characters)
+- **Slug**: Auto-generated URL-friendly identifier
+- **Active Status**: Toggle to show/hide spice mood settings
+- **Timestamps**: Created and updated timestamps
+
+### Admin Features:
+- Create, read, update, delete spice mood settings
+- Toggle spice mood active status
+- Search and filter by combo name, description, or mood/spice blend
+- Filter by intensity level
+- Pagination support
+
+### Public Features:
+- Access spice mood settings by slug
+- No authentication required for public endpoints
+
+### Pre-seeded Spice Mood Settings:
+The system comes with 5 pre-configured spice and mood settings:
+1. **Sweet & Soft** (Low) - Purely emotional, blushes, longing looks, soft build-up
+2. **Warm & Tender** (Low–Med) - Gentle romance, emotional closeness, a kiss or slow burn
+3. **Messy & Real** (Medium) - Realistic heat, stumbles, awkwardness, vulnerability
+4. **Bold & Heated** (High) - Intense passion, open desire, emotionally driven sex
+5. **Raw & Wild** (Very High) - Fully unfiltered desire, explicit, dominant/submissive energy
+
+## Narrative System
+
+The application includes a comprehensive narrative perspective management system:
+
+### Narrative Model Features:
+- **Option Label**: Unique narrative option name (2-100 characters)
+- **Description**: Detailed description of the narrative perspective (10-500 characters)
+- **Slug**: Auto-generated URL-friendly identifier
+- **Active Status**: Toggle to show/hide narrative options
+- **Timestamps**: Created and updated timestamps
+
+### Admin Features:
+- Create, read, update, delete narrative options
+- Toggle narrative active status
+- Search and filter narrative options
+- Pagination support
+
+### Public Features:
+- View active narrative options only
+- Access narratives by slug
+- No authentication required for public endpoints
+
+### Pre-seeded Narrative Options:
+The system comes with 4 pre-configured narrative perspective options:
+1. **First Person – Dual POV** - The story alternates between heroine and hero's first-person perspectives. Ideal for emotional depth.
+2. **Third Person – Limited (Female Lead)** - Written in third person, following only the heroine's thoughts and emotions. Best for subtle storytelling.
+3. **First Person – Female POV** - Entire story from heroine's first-person view. Relatable and direct.
+4. **Third Person – Dual POV** - Third-person narration alternating focus between the hero and heroine. Balanced and classic.
 
 ## Security Features
 

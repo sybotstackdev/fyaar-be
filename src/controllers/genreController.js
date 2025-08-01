@@ -37,15 +37,6 @@ const getAllGenres = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 200, 'Genres retrieved successfully', result);
 });
 
-/**
- * Get active genres (public)
- * GET /api/genres/active
- */
-const getActiveGenres = asyncHandler(async (req, res) => {
-  const genres = await GenreService.getActiveGenres();
-
-  return ApiResponse.success(res, 200, 'Active genres retrieved successfully', genres);
-});
 
 /**
  * Get genre by ID (admin only)
@@ -105,7 +96,6 @@ const toggleGenreStatus = asyncHandler(async (req, res) => {
 module.exports = {
   createGenre,
   getAllGenres,
-  getActiveGenres,
   getGenreById,
   getGenreBySlug,
   updateGenre,

@@ -1,6 +1,8 @@
 const express = require('express');
 const userRoutes = require('./userRoutes');
 const genreRoutes = require('./genreRoutes');
+const spiceMoodRoutes = require('./spiceMoodRoutes');
+const narrativeRoutes = require('./narrativeRoutes');
 
 const router = express.Router();
 
@@ -18,6 +20,8 @@ router.get('/health', (req, res) => {
 router.use('/auth', userRoutes.authRoutes);
 router.use('/users', userRoutes.userRoutes);
 router.use('/genres', genreRoutes);
+router.use('/spice-moods', spiceMoodRoutes);
+router.use('/narratives', narrativeRoutes);
 
 // 404 handler for API routes
 router.use('*', (req, res) => {

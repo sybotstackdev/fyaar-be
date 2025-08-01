@@ -184,7 +184,7 @@ const getAllUsers = async (options = {}) => {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      users: users.map(user => user.getPublicProfile()),
+      results: users.map(user => user.getPublicProfile()),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),

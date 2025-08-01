@@ -1,69 +1,65 @@
 const express = require('express');
 const {
-  createGenre,
-  getAllGenres,
-  getGenreById,
-  getGenreBySlug,
-  updateGenre,
-  deleteGenre,
-  toggleGenreStatus
-} = require('../controllers/genreController');
+  createSpiceMood,
+  getAllSpiceMoods,
+  getSpiceMoodById,
+  getSpiceMoodBySlug,
+  updateSpiceMood,
+  deleteSpiceMood,
+  toggleSpiceMoodStatus
+} = require('../controllers/spiceMoodController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 const {
-  validateGenre,
+  validateSpiceMood,
   validateObjectId,
   validatePagination
 } = require('../middleware/validator');
 
 const router = express.Router();
 
-
-router.get('/slug/:slug', getGenreBySlug);
+// Public route
+router.get('/slug/:slug', getSpiceMoodBySlug);
 
 // Admin-only routes
 router.post('/', 
   authenticate,
   authorize('admin'),
-  validateGenre,
-  createGenre
+  validateSpiceMood,
+  createSpiceMood
 );
 
 router.get('/', 
   authenticate,
-  authorize('user','admin'),
   validatePagination,
-  getAllGenres
+  getAllSpiceMoods
 );
 
 router.get('/:id', 
   authenticate,
-  authorize('admin'),
   validateObjectId,
-  getGenreById
+  getSpiceMoodById
 );
 
 router.put('/:id', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  validateGenre,
-  updateGenre
+  validateSpiceMood,
+  updateSpiceMood
 );
 
 router.delete('/:id', 
   authenticate,
-  authorize('admin'),
   validateObjectId,
-  deleteGenre
+  deleteSpiceMood
 );
 
 router.patch('/:id/toggle', 
   authenticate,
-  authorize('admin'),
   validateObjectId,
-  toggleGenreStatus
+  toggleSpiceMoodStatus
 );
 
 module.exports = router; 
