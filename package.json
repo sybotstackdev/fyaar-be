@@ -1,15 +1,14 @@
 {
-  "name": "node-mongodb-boilerplate",
+  "name": "Fyaar Backend",
   "version": "1.0.0",
-  "description": "A Node.js boilerplate with MongoDB, Express, and JWT authentication",
+  "description": "Fyaar Backend",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",
     "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "seed:genres": "node scripts/seedGenres.js"
+    "lint:fix": "eslint src/ --fix"
   },
   "keywords": [
     "nodejs",
