@@ -140,12 +140,23 @@ npm run seed:genres
 ### Health Check
 - `GET /health` - Server health status
 
+### Location Management
+- `GET /api/locations/category/:category` - Get locations by category (public)
+- `GET /api/locations/slug/:slug` - Get location by slug (public)
+- `POST /api/locations` - Create new location (admin only)
+- `GET /api/locations` - Get all locations with pagination (admin/user)
+- `GET /api/locations/:id` - Get location by ID (admin only)
+- `PUT /api/locations/:id` - Update location (admin only)
+- `DELETE /api/locations/:id` - Delete location (admin only)
+- `PATCH /api/locations/:id/toggle` - Toggle location status (admin only)
+
 ## Available Scripts
 
 - `npm start` - Start production server
 - `npm run dev` - Start development server with nodemon
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
+- `npm run seed:locations` - Seed database with 50 locations across 5 categories
 
 ## Environment Variables
 
@@ -261,6 +272,106 @@ The system comes with 4 pre-configured narrative perspective options:
 2. **Third Person – Limited (Female Lead)** - Written in third person, following only the heroine's thoughts and emotions. Best for subtle storytelling.
 3. **First Person – Female POV** - Entire story from heroine's first-person view. Relatable and direct.
 4. **Third Person – Dual POV** - Third-person narration alternating focus between the hero and heroine. Balanced and classic.
+
+## Location System
+
+The application includes a comprehensive location management system for story settings:
+
+### Location Model Features:
+- **Name**: Unique location name (2-100 characters)
+- **Category**: Predefined categories for story types
+- **Description**: Detailed location description (10-1000 characters)
+- **Country**: Location country (2-100 characters)
+- **State**: Optional state/province (2-100 characters)
+- **Slug**: Auto-generated URL-friendly identifier
+- **Active Status**: Toggle to show/hide locations
+- **Timestamps**: Created and updated timestamps
+
+### Location Categories:
+1. **🏙️ Tier-1 Cities** (`tier1-cities`) - Urban, cosmopolitan settings
+   - Use cases: Office romances, fast-paced lives, career-focused stories, startup culture
+   - Examples: Mumbai, Delhi, Bangalore, Hyderabad, Pune, Chennai, Kolkata, Gurgaon, Noida
+
+2. **🏡 Tier-2 Cities** (`tier2-cities`) - Grounded, relatable settings
+   - Use cases: Nostalgic homecomings, small-town values vs big dreams, second chances
+   - Examples: Jaipur, Bhopal, Kochi, Lucknow, Indore, Surat, Nagpur, Chandigarh, Guwahati
+
+3. **🏖️ Vacation & Travel** (`vacation-travel`) - Adventure and getaway settings
+   - Use cases: Vacation romances, adventure stories, spiritual journeys, romantic getaways
+   - Examples: Goa, Manali, Udaipur, Pondicherry, Rishikesh, Leh-Ladakh, Ooty, Darjeeling
+
+4. **🌍 International** (`international`) - Global and cross-cultural settings
+   - Use cases: NRI romance, digital nomad vibes, remote working flings, cross-cultural tension
+   - Examples: New York, London, Dubai, Paris, Singapore, Toronto, Sydney, Bali, Tokyo, Istanbul
+
+5. **🧙 Speculative/Fantasy** (`speculative-fantasy`) - Sci-fi and fantasy settings
+   - Use cases: Sci-fi romance, fantasy love stories, paranormal romance, magical realism
+   - Examples: Alternate futuristic city, Magical university, Floating islands, Tech-dystopia India, Enchanted forest, Shifter clan territory, Post-apocalyptic wasteland, Interdimensional café, Vampire-dominated metropolis, Reincarnation loops across eras
+
+### Admin Features:
+- Create, read, update, delete locations
+- Toggle location active status
+- Search and filter by name, description, or country
+- Filter by category and country
+- Pagination support
+
+### Public Features:
+- View locations by category
+- Access locations by slug
+- No authentication required for public endpoints
+
+### Pre-seeded Locations:
+The system comes with 50 pre-configured locations across all 5 categories, providing diverse settings for romance story generation.
+
+## Postman Collection
+
+A comprehensive Postman collection is available for testing the Locations API endpoints:
+
+### Import Instructions:
+1. Download the Postman collection file: `Amora_Locations_API.postman_collection.json`
+2. Open Postman and click "Import"
+3. Select the downloaded file
+4. Set up environment variables in Postman:
+   - `base_url`: Your API base URL (e.g., `http://localhost:3000`)
+   - `auth_token`: JWT token for authenticated requests
+   - `location_id`: Location ID for testing specific location operations
+
+### Collection Structure:
+- **Public Endpoints** - Location queries that don't require authentication
+  - Get Location by Slug
+  - Get Locations by Category (all 5 categories)
+- **Admin Endpoints** - Full CRUD operations requiring authentication
+  - Get All Locations (with pagination and search)
+  - Get Location by ID
+  - Create New Location
+  - Update Location
+  - Delete Location
+  - Toggle Location Status
+- **Sample Data** - Pre-configured requests for different location categories
+  - Tier-1 City Location
+  - Vacation Location
+  - International Location
+  - Fantasy Location
+
+### Environment Setup:
+Create a Postman environment with these variables:
+```
+base_url: http://localhost:3000
+auth_token: (your JWT token)
+location_id: (location ID for testing)
+```
+
+### Authentication Flow:
+1. Use the authentication endpoints to get a JWT token
+2. Copy the token from the response and set it as the `auth_token` environment variable
+3. All admin requests will automatically include the authorization header
+
+### Available Categories:
+- `tier1-cities` - Urban, cosmopolitan settings
+- `tier2-cities` - Grounded, relatable settings  
+- `vacation-travel` - Adventure and getaway settings
+- `international` - Global and cross-cultural settings
+- `speculative-fantasy` - Sci-fi and fantasy settings
 
 ## Security Features
 

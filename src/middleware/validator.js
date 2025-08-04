@@ -156,6 +156,38 @@ const validateNarrative = [
 ];
 
 /**
+ * Validate location creation/update data
+ */
+const validateLocation = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Location name must be between 2 and 100 characters'),
+  
+  body('category')
+    .isIn(['tier1-cities', 'tier2-cities', 'vacation-travel', 'international', 'speculative-fantasy'])
+    .withMessage('Category must be one of: tier1-cities, tier2-cities, vacation-travel, international, speculative-fantasy'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Location description must be between 10 and 1000 characters'),
+  
+  body('country')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Country must be between 2 and 100 characters'),
+  
+  body('state')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('State must be between 2 and 100 characters'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate MongoDB ObjectId
  */
 const validateObjectId = [
@@ -191,6 +223,7 @@ module.exports = {
   validateGenre,
   validateSpiceMood,
   validateNarrative,
+  validateLocation,
   validateObjectId,
   validatePagination
 }; 

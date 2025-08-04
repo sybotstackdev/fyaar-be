@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
 
 // Rate limiting
-app.use(apiLimiter);
+// app.use(apiLimiter);
 
 // Logging middleware
 app.use(morgan('combined'));
