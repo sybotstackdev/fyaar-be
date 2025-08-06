@@ -4,6 +4,10 @@ const genreRoutes = require('./genreRoutes');
 const spiceMoodRoutes = require('./spiceMoodRoutes');
 const narrativeRoutes = require('./narrativeRoutes');
 const locationRoutes = require('./locationRoutes');
+const authorRoutes = require('./authorRoutes');
+const instructionRoutes = require('./instructionRoutes');
+const plotRoutes = require('./plotRoutes');
+const chapterRoutes = require('./chapterRoutes');
 
 const router = express.Router();
 
@@ -24,6 +28,10 @@ router.use('/genres', genreRoutes);
 router.use('/spice-moods', spiceMoodRoutes);
 router.use('/narratives', narrativeRoutes);
 router.use('/locations', locationRoutes);
+router.use('/authors', authorRoutes);
+router.use('/instructions', instructionRoutes);
+router.use('/plots', plotRoutes);
+router.use('/chapters', chapterRoutes);
 
 // 404 handler for API routes
 router.use('*', (req, res) => {

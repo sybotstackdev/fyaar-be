@@ -12,7 +12,6 @@ const authenticate = async (req, res, next) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return ApiResponse.unauthorized(res, 'Access denied. No token provided.');
     }
@@ -26,10 +25,10 @@ const authenticate = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Find user by id
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (!user) {
       return ApiResponse.unauthorized(res, 'Invalid token. User not found.');
     }
@@ -44,15 +43,15 @@ const authenticate = async (req, res, next) => {
 
   } catch (error) {
     logger.error('Authentication error:', error.message);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return ApiResponse.unauthorized(res, 'Invalid token.');
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return ApiResponse.unauthorized(res, 'Token expired.');
     }
-    
+
     return ApiResponse.internalError(res, 'Authentication failed.');
   }
 };
@@ -64,7 +63,7 @@ const authenticate = async (req, res, next) => {
 const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return next();
     }
@@ -72,11 +71,11 @@ const optionalAuth = async (req, res, next) => {
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (user && user.isActive) {
       req.user = user;
     }
-    
+
     next();
 
   } catch (error) {
@@ -110,15 +109,31 @@ const authorize = (...roles) => {
  */
 const generateToken = (user) => {
   return jwt.sign(
-    { 
+    {
       id: user._id,
       email: user.email,
-      role: user.role 
+      role: user.role
     },
     process.env.JWT_SECRET,
-    { 
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d' 
+    {
+      expiresIn: '1h'
     }
+  );
+};
+/**
+ * Generate JWT token
+ * @param {Object} user - User object
+ * @returns {string} JWT token
+ */
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' } // Or longer, depending on your policy
   );
 };
 
@@ -136,5 +151,6 @@ module.exports = {
   optionalAuth,
   authorize,
   generateToken,
-  verifyToken
+  verifyToken,
+  generateRefreshToken
 }; 

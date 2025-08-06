@@ -140,9 +140,9 @@ const logout = asyncHandler(async (req, res) => {
  * POST /api/auth/refresh
  */
 const refreshToken = asyncHandler(async (req, res) => {
-  const user = await UserService.getProfile(req.user._id);
+  const user = await UserService.getRefreshToken(req.body.refreshToken);
 
-  return ApiResponse.success(res, 200, 'Token refreshed successfully', { user });
+  return ApiResponse.success(res, 200, 'Token refreshed successfully',  user);
 });
 
 module.exports = {

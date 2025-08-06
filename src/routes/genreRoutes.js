@@ -46,9 +46,8 @@ router.get('/:id',
 
 router.put('/:id', 
   authenticate,
-  authorize('admin'),
+  authorize('admin'), 
   validateObjectId,
-  validateGenre,
   updateGenre
 );
 

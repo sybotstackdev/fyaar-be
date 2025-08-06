@@ -8,11 +8,12 @@ const logger = require('../utils/logger');
  * POST /api/genres
  */
 const createGenre = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, isActive = true } = req.body;
 
   const genre = await GenreService.createGenre({
     title,
-    description
+    description,
+    isActive
   });
 
   return ApiResponse.created(res, 'Genre created successfully', genre);
@@ -84,7 +85,7 @@ const deleteGenre = asyncHandler(async (req, res) => {
  */
 const toggleGenreStatus = asyncHandler(async (req, res) => {
   const genre = await GenreService.getGenreById(req.params.id);
-  
+
   const updatedGenre = await GenreService.updateGenre(req.params.id, {
     isActive: !genre.isActive
   });

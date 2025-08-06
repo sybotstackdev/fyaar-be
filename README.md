@@ -150,6 +150,15 @@ npm run seed:genres
 - `DELETE /api/locations/:id` - Delete location (admin only)
 - `PATCH /api/locations/:id/toggle` - Toggle location status (admin only)
 
+### Author Management
+- `GET /api/authors` - Get all authors with pagination and filtering (public)
+- `GET /api/authors/:id` - Get author by ID (public)
+- `POST /api/authors` - Create new author (admin only)
+- `PUT /api/authors/:id` - Update author (admin only)
+- `DELETE /api/authors/:id` - Delete author (admin only)
+- `PATCH /api/authors/:id/deactivate` - Deactivate author (admin only)
+- `PATCH /api/authors/:id/reactivate` - Reactivate author (admin only)
+
 ## Available Scripts
 
 - `npm start` - Start production server
@@ -157,6 +166,7 @@ npm run seed:genres
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
 - `npm run seed:locations` - Seed database with 50 locations across 5 categories
+- `npm run seed:authors` - Seed database with 10 sample authors
 
 ## Environment Variables
 
@@ -322,6 +332,41 @@ The application includes a comprehensive location management system for story se
 
 ### Pre-seeded Locations:
 The system comes with 50 pre-configured locations across all 5 categories, providing diverse settings for romance story generation.
+
+## Author System
+
+The application includes a comprehensive author management system for tracking writers and their writing styles:
+
+### Author Model Features:
+- **Author Name**: Unique author name (2-100 characters)
+- **Writing Style**: Detailed description of the author's writing style (10-1000 characters)
+- **Pen Name**: Author's pen name or pseudonym (2-100 characters)
+- **Active Status**: Toggle to show/hide authors
+- **Timestamps**: Created and updated timestamps
+
+### Admin Features:
+- Create, read, update, delete authors
+- Deactivate/reactivate authors (soft delete)
+- Search and filter by author name, pen name, or writing style
+- Pagination support
+
+### Public Features:
+- View all authors with pagination and filtering
+- Access authors by ID
+- No authentication required for public endpoints
+
+### Pre-seeded Authors:
+The system comes with 10 pre-configured authors representing diverse writing styles:
+1. **Jane Austen** - Witty social commentary and realistic portrayal of 19th-century English society
+2. **Ernest Hemingway** - Concise, understated writing style known as the "Iceberg Theory"
+3. **Virginia Woolf** - Pioneer of stream-of-consciousness narrative technique
+4. **Gabriel García Márquez** - Master of magical realism, blending fantastical elements with realistic settings
+5. **Toni Morrison** - Lyrical prose and exploration of African American experience
+6. **Haruki Murakami** - Blends magical realism with contemporary Japanese culture
+7. **Chimamanda Ngozi Adichie** - Powerful storytelling about Nigerian culture and diaspora
+8. **Jorge Luis Borges** - Master of philosophical fiction and magical realism
+9. **Sylvia Plath** - Confessional poetry and intense emotional expression
+10. **James Joyce** - Pioneer of modernist literature and stream-of-consciousness technique
 
 ## Postman Collection
 

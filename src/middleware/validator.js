@@ -188,6 +188,97 @@ const validateLocation = [
 ];
 
 /**
+ * Validate author creation/update data
+ */
+const validateAuthor = [
+  body('authorName')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Author name must be between 2 and 100 characters'),
+  
+  body('writingStyle')
+    .trim()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Writing style must be between 10 and 1000 characters'),
+  
+  body('penName')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Pen name must be between 2 and 100 characters'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validate instruction creation/update data
+ */
+const validateInstruction = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Instruction name must be between 2 and 100 characters'),
+  
+  body('instructions')
+    .trim()
+    .isLength({ min: 10, max: 5000 })
+    .withMessage('Instructions must be between 10 and 5000 characters'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validate plot creation/update data
+ */
+const validatePlot = [
+  body('title')
+    .trim()
+    .isLength({ min: 2, max: 200 })
+    .withMessage('Plot title must be between 2 and 200 characters'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 5000 })
+    .withMessage('Plot description must be between 10 and 5000 characters'),
+  
+  body('genre')
+    .isMongoId()
+    .withMessage('Genre must be a valid MongoDB ObjectId'),
+  
+  body('chapters')
+    .optional()
+    .isArray()
+    .withMessage('Chapters must be an array'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validate chapter creation/update data
+ */
+const validateChapter = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 200 })
+    .withMessage('Chapter name must be between 2 and 200 characters'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 2000 })
+    .withMessage('Chapter description must be between 10 and 2000 characters'),
+  
+  body('plot')
+    .isMongoId()
+    .withMessage('Plot must be a valid MongoDB ObjectId'),
+  
+  body('order')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Chapter order must be a positive integer'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate MongoDB ObjectId
  */
 const validateObjectId = [
@@ -224,6 +315,10 @@ module.exports = {
   validateSpiceMood,
   validateNarrative,
   validateLocation,
+  validateAuthor,
+  validateInstruction,
+  validatePlot,
+  validateChapter,
   validateObjectId,
   validatePagination
 }; 

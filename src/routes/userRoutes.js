@@ -75,7 +75,6 @@ authRoutes.post('/logout',
 
 // Refresh token
 authRoutes.post('/refresh', 
-  authenticate,
   refreshToken
 );
 

@@ -140,7 +140,7 @@ const getGenreBySlug = async (slug) => {
 const updateGenre = async (genreId, updateData) => {
   try {
     // Check if title is being updated and if it already exists
-    if (updateData.title) {
+    if (updateData?.title) {
       const existingGenre = await Genre.findOne({ 
         title: updateData.title, 
         _id: { $ne: genreId } 

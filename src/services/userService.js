@@ -1,5 +1,5 @@
 const User = require('../models/userModel');
-const { generateToken } = require('../middleware/auth');
+const { generateToken, generateRefreshToken, verifyToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 /**
@@ -47,7 +47,7 @@ const login = async (email, password) => {
   try {
     // Find user by email and include password for comparison
     const user = await User.findByEmail(email).select('+password');
-    
+
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -69,6 +69,8 @@ const login = async (email, password) => {
     // Generate token
     const token = generateToken(user);
 
+    const refreshToken = generateRefreshToken(user); // <-- new function
+
     // Return user data without password
     const userResponse = user.getPublicProfile();
 
@@ -76,7 +78,8 @@ const login = async (email, password) => {
 
     return {
       user: userResponse,
-      token
+      token,
+      refreshToken
     };
   } catch (error) {
     logger.error('User login error:', error.message);
@@ -92,7 +95,7 @@ const login = async (email, password) => {
 const getProfile = async (userId) => {
   try {
     const user = await User.findById(userId).select('-password');
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -100,6 +103,30 @@ const getProfile = async (userId) => {
     return user.getPublicProfile();
   } catch (error) {
     logger.error('Get profile error:', error.message);
+    throw error;
+  }
+};
+
+
+
+const getRefreshToken = async (reqrefreshToken) => {
+  try {
+    const decoded = verifyToken(reqrefreshToken);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      throw new Error('User not found');
+    }
+    // Generate token
+    const token = generateToken(user);
+
+    const refreshToken = generateRefreshToken(user); // <-- new function
+
+    return {
+      token,
+      refreshToken
+    };
+  } catch (error) {
+    logger.error('Get refresh token error:', error.message);
     throw error;
   }
 };
@@ -152,7 +179,7 @@ const getAllUsers = async (options = {}) => {
 
     // Build query
     const query = {};
-    
+
     if (search) {
       query.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -171,7 +198,7 @@ const getAllUsers = async (options = {}) => {
 
     // Execute query with pagination
     const skip = (page - 1) * limit;
-    
+
     const [users, total] = await Promise.all([
       User.find(query)
         .select('-password')
@@ -208,7 +235,7 @@ const getAllUsers = async (options = {}) => {
 const getUserById = async (userId) => {
   try {
     const user = await User.findById(userId).select('-password');
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -228,7 +255,7 @@ const getUserById = async (userId) => {
 const deleteUser = async (userId) => {
   try {
     const user = await User.findByIdAndDelete(userId);
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -252,7 +279,7 @@ const deleteUser = async (userId) => {
 const changePassword = async (userId, currentPassword, newPassword) => {
   try {
     const user = await User.findById(userId).select('+password');
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -284,5 +311,6 @@ module.exports = {
   getAllUsers,
   getUserById,
   deleteUser,
-  changePassword
+  changePassword,
+  getRefreshToken
 }; 
