@@ -8,11 +8,12 @@ const logger = require('../utils/logger');
  * POST /api/authors
  */
 const createAuthor = asyncHandler(async (req, res) => {
-  const { authorName, writingStyle, penName } = req.body;
+  const { authorName, writingStyle, penName,designStyle } = req.body;
 
   const result = await AuthorService.createAuthor({
     authorName,
     writingStyle,
+    designStyle,
     penName
   });
 

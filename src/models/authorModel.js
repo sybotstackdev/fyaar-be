@@ -13,6 +13,12 @@ const authorSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Writing style cannot be more than 1000 characters']
   },
+  designStyle: {
+    type: String,
+    required: [true, 'Design style is required'],
+    trim: true,
+    maxlength: [1000, 'Design style cannot be more than 1000 characters']
+  },
   penName: {
     type: String,
     required: [true, 'Pen name is required'],

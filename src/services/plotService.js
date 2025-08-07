@@ -73,18 +73,14 @@ const getAllPlots = async (options = {}) => {
 
     // Execute query
     const plots = await Plot.find(query)
-      .populate('genre', 'title description')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limit);
 
     // Get total count
     const total = await Plot.countDocuments(query);
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     logger.info(`Retrieved ${plots.length} plots`);
 
@@ -95,8 +91,8 @@ const getAllPlots = async (options = {}) => {
         limit,
         total,
         totalPages,
-        hasNextPage,
-        hasPrevPage
+        hasNext,
+        hasPrev
       }
     };
   } catch (error) {
@@ -114,7 +110,8 @@ const getPlotById = async (plotId) => {
   try {
     const plot = await Plot.findById(plotId)
       .populate('genre', 'title description')
-      .populate('chapters');
+      .populate('chapters')
+      .populate('visualPrompts');
 
     if (!plot) {
       throw new Error('Plot not found');
@@ -136,7 +133,8 @@ const getPlotBySlug = async (slug) => {
   try {
     const plot = await Plot.findBySlug(slug)
       .populate('genre', 'title description')
-      .populate('chapters');
+      .populate('chapters')
+      .populate('visualPrompts');
     
     if (!plot || !plot.isActive) {
       throw new Error('Plot not found');

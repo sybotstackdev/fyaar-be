@@ -67,6 +67,68 @@ const validateLogin = [
 ];
 
 /**
+ * Validate send OTP data
+ */
+const validateSendOTP = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validate OTP verification data
+ */
+const validateOTPVerification = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('OTP must be exactly 6 digits')
+    .isNumeric()
+    .withMessage('OTP must contain only numbers'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validate registration with OTP data
+ */
+const validateRegistrationWithOTP = [
+  body('firstName')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('First name must be between 2 and 50 characters'),
+  
+  body('lastName')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Last name must be between 2 and 50 characters'),
+  
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+  
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('OTP must be exactly 6 digits')
+    .isNumeric()
+    .withMessage('OTP must contain only numbers'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate user update data
  */
 const validateUserUpdate = [
@@ -201,6 +263,11 @@ const validateAuthor = [
     .isLength({ min: 10, max: 1000 })
     .withMessage('Writing style must be between 10 and 1000 characters'),
   
+  body('designStyle')
+    .trim()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Design style must be between 10 and 1000 characters'),
+  
   body('penName')
     .trim()
     .isLength({ min: 2, max: 100 })
@@ -279,6 +346,32 @@ const validateChapter = [
 ];
 
 /**
+ * Validate visual prompt creation/update data
+ */
+const validateVisualPrompt = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 200 })
+    .withMessage('Visual prompt name must be between 2 and 200 characters'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 2000 })
+    .withMessage('Visual prompt description must be between 10 and 2000 characters'),
+  
+  body('plot')
+    .isMongoId()
+    .withMessage('Plot must be a valid MongoDB ObjectId'),
+  
+  body('order')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Visual prompt order must be a positive integer'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate MongoDB ObjectId
  */
 const validateObjectId = [
@@ -310,6 +403,9 @@ module.exports = {
   handleValidationErrors,
   validateRegistration,
   validateLogin,
+  validateSendOTP,
+  validateOTPVerification,
+  validateRegistrationWithOTP,
   validateUserUpdate,
   validateGenre,
   validateSpiceMood,
@@ -319,6 +415,7 @@ module.exports = {
   validateInstruction,
   validatePlot,
   validateChapter,
+  validateVisualPrompt,
   validateObjectId,
   validatePagination
 }; 

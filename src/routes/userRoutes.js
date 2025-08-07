@@ -2,6 +2,10 @@ const express = require('express');
 const {
   register,
   login,
+  sendLoginOTP,
+  loginWithOTP,
+  sendRegistrationOTP,
+  registerWithOTP,
   getProfile,
   updateProfile,
   getAllUsers,
@@ -18,6 +22,9 @@ const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
 const {
   validateRegistration,
   validateLogin,
+  validateSendOTP,
+  validateOTPVerification,
+  validateRegistrationWithOTP,
   validateUserUpdate,
   validateObjectId,
   validatePagination
@@ -40,6 +47,34 @@ authRoutes.post('/login',
   authLimiter,
   validateLogin,
   login
+);
+
+// Send login OTP
+authRoutes.post('/send-login-otp', 
+  authLimiter,
+  validateSendOTP,
+  sendLoginOTP
+);
+
+// Login with OTP
+authRoutes.post('/login-otp', 
+  authLimiter,
+  validateOTPVerification,
+  loginWithOTP
+);
+
+// Send registration OTP
+authRoutes.post('/send-registration-otp', 
+  authLimiter,
+  validateSendOTP,
+  sendRegistrationOTP
+);
+
+// Register with OTP
+authRoutes.post('/register-otp', 
+  authLimiter,
+  validateRegistrationWithOTP,
+  registerWithOTP
 );
 
 // Get current user profile

@@ -20,6 +20,22 @@ const createChapter = async (chapterData) => {
       chapterData.order = await Chapter.getNextOrder(chapterData.plot);
     }
 
+    // Generate slug from name (same logic as model middleware)
+    const generatedSlug = chapterData.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    
+    // Check if a chapter with the same slug already exists in this plot
+    const existingChapter = await Chapter.findOne({ 
+      plot: chapterData.plot, 
+      slug: generatedSlug 
+    });
+    
+    if (existingChapter) {
+      throw new Error(`A chapter with the slug '${generatedSlug}' already exists in this plot`);
+    }
+
     const chapter = new Chapter(chapterData);
     await chapter.save();
     
@@ -88,8 +104,8 @@ const getAllChapters = async (options = {}) => {
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     logger.info(`Retrieved ${chapters.length} chapters`);
 
@@ -100,8 +116,8 @@ const getAllChapters = async (options = {}) => {
         limit,
         total,
         totalPages,
-        hasNextPage,
-        hasPrevPage
+        hasNext,
+        hasPrev
       }
     };
   } catch (error) {
@@ -171,6 +187,26 @@ const updateChapter = async (chapterId, updateData) => {
       const plot = await Plot.findById(updateData.plot);
       if (!plot) {
         throw new Error('Plot not found');
+      }
+    }
+
+    // If name is being updated, check for slug conflicts
+    if (updateData.name) {
+      // Generate slug from name (same logic as model middleware)
+      const generatedSlug = updateData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      
+      // Check if another chapter with the same slug exists in the same plot
+      const existingChapter = await Chapter.findOne({ 
+        plot: updateData.plot || chapter.plot, 
+        slug: generatedSlug,
+        _id: { $ne: chapterId } // Exclude the current chapter being updated
+      });
+      
+      if (existingChapter) {
+        throw new Error(`A chapter with the slug '${generatedSlug}' already exists in this plot`);
       }
     }
 
@@ -265,7 +301,6 @@ const reactivateChapter = async (chapterId) => {
  * @returns {Array} Array of chapters
  */
 const getChaptersByPlot = async (plotId) => {
-    console.log("plotId",plotId)
   try {
     const chapters = await Chapter.findByPlot(plotId)
       .populate('plot', 'title genre');

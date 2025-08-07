@@ -8,6 +8,7 @@ const authorRoutes = require('./authorRoutes');
 const instructionRoutes = require('./instructionRoutes');
 const plotRoutes = require('./plotRoutes');
 const chapterRoutes = require('./chapterRoutes');
+const visualPromptRoutes = require('./visualPromptRoutes');
 
 const router = express.Router();
 
@@ -32,6 +33,7 @@ router.use('/authors', authorRoutes);
 router.use('/instructions', instructionRoutes);
 router.use('/plots', plotRoutes);
 router.use('/chapters', chapterRoutes);
+router.use('/visual-prompts', visualPromptRoutes);
 
 // 404 handler for API routes
 router.use('*', (req, res) => {

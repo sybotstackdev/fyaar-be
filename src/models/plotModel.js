@@ -69,6 +69,12 @@ plotSchema.statics.getChapterCount = async function(plotId) {
   return await Chapter.countDocuments({ plot: plotId, isActive: true });
 };
 
+// Static method to get visual prompt count for a plot
+plotSchema.statics.getVisualPromptCount = async function(plotId) {
+  const VisualPrompt = mongoose.model('VisualPrompt');
+  return await VisualPrompt.countDocuments({ plot: plotId, isActive: true });
+};
+
 // Instance method to get public profile
 plotSchema.methods.getPublicProfile = function() {
   const plotObject = this.toObject();
@@ -84,10 +90,26 @@ plotSchema.virtual('chapters', {
   options: { sort: { order: 1 } }
 });
 
+// Virtual for visual prompts
+plotSchema.virtual('visualPrompts', {
+  ref: 'VisualPrompt',
+  localField: '_id',
+  foreignField: 'plot',
+  options: { sort: { order: 1 } }
+});
+
 // Virtual for chapter count
 plotSchema.virtual('chapterCount').get(function() {
   if (this.chapters && Array.isArray(this.chapters)) {
     return this.chapters.length;
+  }
+  return 0;
+});
+
+// Virtual for visual prompt count
+plotSchema.virtual('visualPromptCount').get(function() {
+  if (this.visualPrompts && Array.isArray(this.visualPrompts)) {
+    return this.visualPrompts.length;
   }
   return 0;
 });

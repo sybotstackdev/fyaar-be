@@ -33,6 +33,59 @@ const login = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Send login OTP
+ * POST /api/auth/send-login-otp
+ */
+const sendLoginOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const result = await UserService.sendLoginOTP(email);
+
+  return ApiResponse.success(res, 200, 'OTP sent successfully', result);
+});
+
+/**
+ * Login with OTP
+ * POST /api/auth/login-otp
+ */
+const loginWithOTP = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  const result = await UserService.verifyLoginOTP(email, otp);
+
+  return ApiResponse.success(res, 200, 'Login successful', result);
+});
+
+/**
+ * Send registration OTP
+ * POST /api/auth/send-registration-otp
+ */
+const sendRegistrationOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const result = await UserService.sendRegistrationOTP(email);
+
+  return ApiResponse.success(res, 200, 'OTP sent successfully', result);
+});
+
+/**
+ * Register with OTP
+ * POST /api/auth/register-otp
+ */
+const registerWithOTP = asyncHandler(async (req, res) => {
+  const { firstName, lastName, email, password, otp } = req.body;
+
+  const result = await UserService.registerWithOTP({
+    firstName,
+    lastName,
+    email,
+    password
+  }, otp);
+
+  return ApiResponse.created(res, 'User registered successfully', result);
+});
+
+/**
  * Get user profile
  * GET /api/auth/profile
  */
@@ -148,6 +201,10 @@ const refreshToken = asyncHandler(async (req, res) => {
 module.exports = {
   register,
   login,
+  sendLoginOTP,
+  loginWithOTP,
+  sendRegistrationOTP,
+  registerWithOTP,
   getProfile,
   updateProfile,
   getAllUsers,

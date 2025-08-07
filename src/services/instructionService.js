@@ -75,8 +75,8 @@ const getAllInstructions = async (options = {}) => {
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     logger.info(`Retrieved ${instructions.length} instructions`);
 
@@ -87,8 +87,8 @@ const getAllInstructions = async (options = {}) => {
         limit,
         total,
         totalPages,
-        hasNextPage,
-        hasPrevPage
+        hasNext,
+        hasPrev
       }
     };
   } catch (error) {

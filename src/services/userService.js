@@ -1,5 +1,7 @@
 const User = require('../models/userModel');
+const OTP = require('../models/otpModel');
 const { generateToken, generateRefreshToken, verifyToken } = require('../middleware/auth');
+const emailService = require('./emailService');
 const logger = require('../utils/logger');
 
 /**
@@ -303,9 +305,198 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   }
 };
 
+/**
+ * Send OTP for login
+ * @param {string} email - User email
+ * @returns {Object} Success message
+ */
+const sendLoginOTP = async (email) => {
+  try {
+    // Check if user exists
+    const user = await User.findByEmail(email);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new Error('Account is deactivated');
+    }
+
+    // Generate OTP
+    const otp = OTP.generateOTP();
+
+    // Invalidate any existing OTPs for this email
+    await OTP.invalidateOTPs(email, 'login');
+
+    // Create new OTP
+    const otpRecord = new OTP({
+      email: email.toLowerCase(),
+      otp,
+      type: 'login'
+    });
+    await otpRecord.save();
+
+    // Send OTP email
+    await emailService.sendOTPEmail(email, otp, 'login');
+
+    logger.info(`Login OTP sent to ${email}`);
+
+    return {
+      message: 'OTP sent successfully',
+      email: email
+    };
+  } catch (error) {
+    logger.error('Send login OTP error:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Verify OTP and login
+ * @param {string} email - User email
+ * @param {string} otp - OTP code
+ * @returns {Object} User data and token
+ */
+const verifyLoginOTP = async (email, otp) => {
+  try {
+    // Find valid OTP
+    const otpRecord = await OTP.findValidOTP(email, otp, 'login');
+    if (!otpRecord) {
+      throw new Error('Invalid or expired OTP');
+    }
+
+    // Delete the OTP record after successful verification
+    // This is more secure than just marking as used and helps with database cleanup
+    await OTP.findByIdAndDelete(otpRecord._id);
+
+    // Get user
+    const user = await User.findByEmail(email);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new Error('Account is deactivated');
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate token
+    const token = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Return user data without password
+    const userResponse = user.getPublicProfile();
+
+    logger.info(`User logged in with OTP: ${user.email}`);
+
+    return {
+      user: userResponse,
+      token,
+      refreshToken
+    };
+  } catch (error) {
+    logger.error('Verify login OTP error:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Send OTP for registration
+ * @param {string} email - User email
+ * @returns {Object} Success message
+ */
+const sendRegistrationOTP = async (email) => {
+  try {
+    // Check if email already exists
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      throw new Error('Email already registered');
+    }
+
+    // Generate OTP
+    const otp = OTP.generateOTP();
+
+    // Invalidate any existing OTPs for this email
+    await OTP.invalidateOTPs(email, 'registration');
+
+    // Create new OTP
+    const otpRecord = new OTP({
+      email: email.toLowerCase(),
+      otp,
+      type: 'registration'
+    });
+    await otpRecord.save();
+
+    // Send OTP email
+    await emailService.sendOTPEmail(email, otp, 'registration');
+
+    logger.info(`Registration OTP sent to ${email}`);
+
+    return {
+      message: 'OTP sent successfully',
+      email: email
+    };
+  } catch (error) {
+    logger.error('Send registration OTP error:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Register user with OTP verification
+ * @param {Object} userData - User registration data
+ * @param {string} otp - OTP code
+ * @returns {Object} Created user and token
+ */
+const registerWithOTP = async (userData, otp) => {
+  try {
+    // Verify OTP
+    const otpRecord = await OTP.findValidOTP(userData.email, otp, 'registration');
+    if (!otpRecord) {
+      throw new Error('Invalid or expired OTP');
+    }
+
+    // Delete the OTP record after successful verification
+    // This is more secure than just marking as used and helps with database cleanup
+    await OTP.findByIdAndDelete(otpRecord._id);
+
+    // Create new user
+    const user = new User(userData);
+    await user.save();
+
+    // Send welcome email
+    await emailService.sendWelcomeEmail(user.email, user.firstName);
+
+    // Generate token
+    const token = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Return user data without password
+    const userResponse = user.getPublicProfile();
+
+    logger.info(`New user registered with OTP: ${user.email}`);
+
+    return {
+      user: userResponse,
+      token,
+      refreshToken
+    };
+  } catch (error) {
+    logger.error('Register with OTP error:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   register,
   login,
+  sendLoginOTP,
+  verifyLoginOTP,
+  sendRegistrationOTP,
+  registerWithOTP,
   getProfile,
   updateProfile,
   getAllUsers,

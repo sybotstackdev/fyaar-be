@@ -17,7 +17,11 @@ const config = {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
   },
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000'
+  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  mailgun: {
+    apiKey: process.env.MAILGUN_API_KEY,
+    domain: process.env.MAILGUN_DOMAIN
+  }
 };
 
 // Validate required environment variables

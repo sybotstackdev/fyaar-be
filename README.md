@@ -97,6 +97,10 @@ npm run seed:genres
 ### Authentication
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login user
+- `POST /api/auth/send-login-otp` - Send login OTP to email
+- `POST /api/auth/login-otp` - Login with OTP verification
+- `POST /api/auth/send-registration-otp` - Send registration OTP to email
+- `POST /api/auth/register-otp` - Register with OTP verification
 - `GET /api/auth/me` - Get current user profile
 - `PUT /api/auth/profile` - Update user profile
 - `POST /api/auth/change-password` - Change password
@@ -178,6 +182,8 @@ npm run seed:genres
 | `JWT_SECRET` | JWT secret key | `your-secret-key` |
 | `JWT_EXPIRES_IN` | JWT expiration time | `7d` |
 | `CORS_ORIGIN` | CORS allowed origin | `http://localhost:3000` |
+| `MAILGUN_API_KEY` | Mailgun API key for email sending | Required |
+| `MAILGUN_DOMAIN` | Mailgun domain for email sending | Required |
 
 ## Testing
 
@@ -332,6 +338,84 @@ The application includes a comprehensive location management system for story se
 
 ### Pre-seeded Locations:
 The system comes with 50 pre-configured locations across all 5 categories, providing diverse settings for romance story generation.
+
+## OTP Authentication System
+
+The application includes a comprehensive One-Time Password (OTP) authentication system using Mailgun for email delivery:
+
+### OTP Features:
+- **6-digit numeric OTPs** - Secure, easy-to-enter codes
+- **10-minute expiration** - Automatic cleanup for security
+- **Email delivery** - Professional HTML email templates
+- **Multiple OTP types** - Login, registration, and password reset support
+- **Rate limiting** - Prevents abuse and spam
+- **Validation** - Comprehensive input validation
+- **TTL indexing** - Automatic database cleanup
+
+### OTP Flow:
+
+#### Login with OTP:
+1. **Send OTP**: `POST /api/auth/send-login-otp`
+   ```json
+   {
+     "email": "user@example.com"
+   }
+   ```
+2. **Verify OTP**: `POST /api/auth/login-otp`
+   ```json
+   {
+     "email": "user@example.com",
+     "otp": "123456"
+   }
+   ```
+
+#### Registration with OTP:
+1. **Send OTP**: `POST /api/auth/send-registration-otp`
+   ```json
+   {
+     "email": "newuser@example.com"
+   }
+   ```
+2. **Register with OTP**: `POST /api/auth/register-otp`
+   ```json
+   {
+     "firstName": "John",
+     "lastName": "Doe",
+     "email": "newuser@example.com",
+     "password": "password123",
+     "otp": "123456"
+   }
+   ```
+
+### Email Templates:
+- **Professional HTML design** - Branded with Amora styling
+- **Security warnings** - Clear instructions about OTP safety
+- **Responsive design** - Works on all email clients
+- **Multiple templates** - Different designs for login, registration, and welcome emails
+
+### Security Features:
+- **OTP expiration** - 10-minute automatic timeout
+- **Single-use OTPs** - Each OTP can only be used once
+- **Rate limiting** - Prevents OTP spam
+- **Email validation** - Ensures valid email addresses
+- **Database cleanup** - Automatic removal of expired OTPs
+
+### Mailgun Configuration:
+1. **Sign up for Mailgun** - Create account at mailgun.com
+2. **Get API key** - From Mailgun dashboard
+3. **Configure domain** - Set up sending domain
+4. **Update environment** - Add to `.env` file:
+   ```env
+   MAILGUN_API_KEY=your-mailgun-api-key
+   MAILGUN_DOMAIN=your-mailgun-domain
+   ```
+
+### OTP Model Features:
+- **Email tracking** - Links OTPs to specific email addresses
+- **Type classification** - Distinguishes between login, registration, etc.
+- **Usage tracking** - Prevents OTP reuse
+- **Expiration handling** - Automatic cleanup via TTL index
+- **Validation methods** - Helper functions for OTP verification
 
 ## Author System
 
