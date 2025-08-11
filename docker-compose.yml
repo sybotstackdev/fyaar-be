@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    container_name: fyaar-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules  # Prevent node_modules from being overwritten by local directory
+    env_file:
+      - .env  # Load environment variables from .env
+    networks:
+      - fyaar-network
+
+networks:
+  fyaar-network:
+    driver: bridge
+
