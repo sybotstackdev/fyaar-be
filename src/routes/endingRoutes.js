@@ -1,65 +1,65 @@
 const express = require('express');
 const {
-  createNarrative,
-  getAllNarratives,
-  getNarrativeById,
-  getNarrativeBySlug,
-  updateNarrative,
-  deleteNarrative,
-  toggleNarrativeStatus,
-} = require('../controllers/narrativeController');
+  createEnding,
+  getAllEndings,
+  getEndingById,
+  getEndingBySlug,
+  updateEnding,
+  deleteEnding,
+  toggleEndingStatus,
+} = require('../controllers/endingController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 const {
-  validateNarrative,
+  validateEnding,
   validateObjectId,
   validatePagination
 } = require('../middleware/validator');
 
 const router = express.Router();
 
-router.get('/slug/:slug', getNarrativeBySlug);
+router.get('/slug/:slug', getEndingBySlug);
 
 // Admin-only routes
 router.post('/', 
   authenticate,
   authorize('admin'),
-  validateNarrative,
-  createNarrative
+  validateEnding,
+  createEnding
 );
 
 router.get('/', 
   authenticate,
   validatePagination,
-  getAllNarratives
+  getAllEndings
 );
 
 router.get('/:id', 
   authenticate,
   validateObjectId,
-  getNarrativeById
+  getEndingById
 );
 
 router.put('/:id', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  validateNarrative,
-  updateNarrative
+  validateEnding,
+  updateEnding
 );
 
 router.delete('/:id', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  deleteNarrative
+  deleteEnding
 );
 
 router.patch('/:id/toggle', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  toggleNarrativeStatus
+  toggleEndingStatus
 );
 
 module.exports = router; 

@@ -218,6 +218,23 @@ const validateNarrative = [
 ];
 
 /**
+ * Validate ending creation/update data
+ */
+const validateEnding = [
+  body('optionLabel')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Option label must be between 2 and 100 characters'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Description must be between 10 and 500 characters'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate location creation/update data
  */
 const validateLocation = [
@@ -410,6 +427,7 @@ module.exports = {
   validateGenre,
   validateSpiceMood,
   validateNarrative,
+  validateEnding,
   validateLocation,
   validateAuthor,
   validateInstruction,
