@@ -10,6 +10,7 @@ const plotRoutes = require('./plotRoutes');
 const chapterRoutes = require('./chapterRoutes');
 const visualPromptRoutes = require('./visualPromptRoutes');
 const endingRoutes = require('./endingRoutes');
+const tagRoutes = require('./tagRoutes');
 
 const router = express.Router();
 
@@ -30,6 +31,7 @@ router.use('/genres', genreRoutes);
 router.use('/spice-moods', spiceMoodRoutes);
 router.use('/narratives', narrativeRoutes);
 router.use('/endings', endingRoutes);
+router.use('/tags', tagRoutes);
 router.use('/locations', locationRoutes);
 router.use('/authors', authorRoutes);
 router.use('/instructions', instructionRoutes);

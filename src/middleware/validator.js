@@ -235,6 +235,18 @@ const validateEnding = [
 ];
 
 /**
+ * Validate tag creation/update data
+ */
+const validateTag = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Name must be between 2 and 100 characters'),
+  
+  handleValidationErrors
+];
+
+/**
  * Validate location creation/update data
  */
 const validateLocation = [
@@ -428,6 +440,7 @@ module.exports = {
   validateSpiceMood,
   validateNarrative,
   validateEnding,
+  validateTag,
   validateLocation,
   validateAuthor,
   validateInstruction,
