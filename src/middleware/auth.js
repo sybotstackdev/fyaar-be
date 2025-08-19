@@ -2,13 +2,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const ApiResponse = require('../utils/response');
 const logger = require('../utils/logger');
+const { asyncHandler } = require('./errorHandler');
+const environment = require('../config/environment');
 
 /**
  * Authentication middleware
  * Verifies JWT token and attaches user to request object
  */
 
-const authenticate = async (req, res, next) => {
+const authenticate = asyncHandler(async (req, res, next) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
@@ -54,35 +56,29 @@ const authenticate = async (req, res, next) => {
 
     return ApiResponse.internalError(res, 'Authentication failed.');
   }
-};
+});
 
 /**
  * Optional authentication middleware
  * Similar to authenticate but doesn't return error if no token
  */
-const optionalAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next();
+const softAuthenticate = asyncHandler(async (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        req.user = null;
+        return next();
     }
 
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-
-    if (user && user.isActive) {
-      req.user = user;
+    try {
+        const decoded = jwt.verify(token, environment.jwt.secret);
+        const user = await User.findById(decoded.id);
+        req.user = user;
+        next();
+    } catch (error) {
+        req.user = null;
+        next();
     }
-
-    next();
-
-  } catch (error) {
-    // Don't return error, just continue without user
-    next();
-  }
-};
+});
 
 /**
  * Role-based authorization middleware
@@ -148,7 +144,7 @@ const verifyToken = (token) => {
 
 module.exports = {
   authenticate,
-  optionalAuth,
+  softAuthenticate,
   authorize,
   generateToken,
   verifyToken,
