@@ -21,7 +21,10 @@ connectDB();
 app.use(helmet());
 
 // Allow CORS for all origins
-
+app.use(cors({
+  origin: true, // Reflects the request origin, as recommended for allowing all origins with credentials
+  credentials: true
+}));
 
 // Handle preflight requests for all routes
 app.options('*', cors({
