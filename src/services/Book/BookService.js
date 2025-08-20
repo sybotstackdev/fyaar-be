@@ -31,14 +31,6 @@ const getAllBooks = async (options = {}, user = null) => {
             query.$text = { $search: search };
         }
 
-        if (isAdmin) {
-            if (status) {
-                query.status = status;
-            }
-        } else {
-            query.status = 'published';
-        }
-
 
         const skip = (page - 1) * limit;
         const sortObj = { [sort]: order === 'desc' ? -1 : 1 };

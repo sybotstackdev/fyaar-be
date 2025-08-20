@@ -9,9 +9,23 @@ const createChapter = async (chapterData) => {
             throw new Error('Book not found');
         }
 
-        const chapter = new BookChapter(chapterData);
+        // --- Automatic Order Logic ---
+        // Find the chapter with the highest order for this book
+        const highestOrderChapter = await BookChapter.findOne({ book: chapterData.book })
+            .sort({ order: -1 })
+            .limit(1);
+
+        // Set the order for the new chapter
+        const newOrder = highestOrderChapter ? highestOrderChapter.order + 1 : 1;
+        // --- End of Logic ---
+
+        const chapter = new BookChapter({
+            ...chapterData,
+            order: newOrder // Overwrite any user-provided order
+        });
+
         await chapter.save();
-        logger.info(`New chapter created for book: ${book.title}`);
+        logger.info(`New chapter created for book: ${book.title} with order ${newOrder}`);
         return chapter;
     } catch (error) {
         logger.error('Chapter creation error:', error.message);
@@ -111,6 +125,24 @@ const softDeleteChapter = async (chapterId) => {
     }
 };
 
+const reorderChapters = async (bookId, orderedChapterIds) => {
+    try {
+        const updatePromises = orderedChapterIds.map((chapterId, index) => {
+            return BookChapter.updateOne(
+                { _id: chapterId, book: bookId }, // Ensure the chapter belongs to the correct book
+                { $set: { order: index + 1 } }
+            );
+        });
+
+        await Promise.all(updatePromises);
+        logger.info(`Successfully reordered chapters for book ${bookId}`);
+        return { success: true, message: 'Chapters reordered successfully.' };
+    } catch (error) {
+        logger.error(`Error reordering chapters for book ${bookId}:`, error.message);
+        throw error;
+    }
+};
+
 const restoreChapter = async (chapterId) => {
     try {
         const chapter = await BookChapter.findOneAndUpdate({ _id: chapterId, deletedAt: { $ne: null } }, { deletedAt: null }, { new: true });
@@ -145,6 +177,7 @@ module.exports = {
     getChapterById,
     updateChapter,
     softDeleteChapter,
+    reorderChapters,
     restoreChapter,
     permanentlyDeleteChapter
 };

@@ -36,6 +36,6 @@ const bookChapterSchema = new mongoose.Schema({
   timestamps: true
 });
 
-bookChapterSchema.index({ book: 1, order: 1 });
+bookChapterSchema.index({ book: 1, order: 1 }, { unique: true });
 
 module.exports = mongoose.model('BookChapter', bookChapterSchema);

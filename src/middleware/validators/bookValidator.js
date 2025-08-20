@@ -176,7 +176,6 @@ const validateNewChapter = [
     body('book').isMongoId().withMessage('Book must be a valid MongoDB ObjectId'),
     body('title').trim().isLength({ min: 2, max: 200 }).withMessage('Chapter title must be between 2 and 200 characters'),
     body('content').trim().isLength({ min: 10 }).withMessage('Chapter content must be at least 10 characters'),
-    body('order').isInt({ min: 1 }).withMessage('Chapter order must be a positive integer'),
     body('status').optional().isIn(['draft', 'published']).withMessage('Status must be one of: draft, published'),
     handleValidationErrors
 ];

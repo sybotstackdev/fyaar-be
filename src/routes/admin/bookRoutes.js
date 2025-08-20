@@ -9,7 +9,8 @@ const {
     getBookAnalytics,
     getChaptersByBook,
     uploadCoverImage,
-    permanentlyDeleteBook
+    permanentlyDeleteBook,
+    reorderBookChapters
 } = require('../../controllers/Book/bookController');
 const { authenticate, authorize, softAuthenticate } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
@@ -57,6 +58,13 @@ router.get('/:id/chapters',
     softAuthenticate,
     validateObjectId,
     getChaptersByBook
+);
+
+router.patch('/:id/chapters/reorder',
+    authenticate,
+    authorize('admin'),
+    validateObjectId,
+    reorderBookChapters
 );
 
 router.get('/analytics',

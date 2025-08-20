@@ -49,6 +49,15 @@ const getChaptersByBook = asyncHandler(async (req, res) => {
     return ApiResponse.success(res, 200, 'Chapters for book retrieved successfully', result);
 });
 
+const reorderBookChapters = asyncHandler(async (req, res) => {
+    const { orderedChapterIds } = req.body;
+    if (!orderedChapterIds || !Array.isArray(orderedChapterIds)) {
+        return ApiResponse.error(res, 400, 'orderedChapterIds must be an array.');
+    }
+    const result = await BookChapterService.reorderChapters(req.params.id, orderedChapterIds);
+    return ApiResponse.success(res, 200, result.message, result);
+});
+
 const uploadCoverImage = asyncHandler(async (req, res) => {
     if (!req.file) {
         return ApiResponse.error(res, 400, 'No file uploaded.');
@@ -68,5 +77,6 @@ module.exports = {
     permanentlyDeleteBook,
     getBookAnalytics,
     getChaptersByBook,
+    reorderBookChapters,
     uploadCoverImage
 };
