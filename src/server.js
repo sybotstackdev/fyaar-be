@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 // Security middleware
-app.use(helmet());
+// app.use(helmet());
 
 // Allow CORS for all origins
 // app.use(cors({
