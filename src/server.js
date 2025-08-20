@@ -18,21 +18,19 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 // Security middleware
-// app.use(helmet());
+app.use(helmet());
 
 // Allow CORS for all origins
-// app.use(cors({
-//   origin: true, // Reflects the request origin, as recommended for allowing all origins with credentials
-//   credentials: true
-// }));
-
-app.use(cors());
+app.use(cors({
+  origin: true, // Reflects the request origin, as recommended for allowing all origins with credentials
+  credentials: true
+}));
 
 // Handle preflight requests for all routes
-// app.options('*', cors({
-//   origin: true,
-//   credentials: true
-// }));
+app.options('*', cors({
+  origin: true,
+  credentials: true
+}));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
