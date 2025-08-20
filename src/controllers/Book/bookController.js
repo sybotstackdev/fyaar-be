@@ -1,4 +1,4 @@
-const BookService = require('../../services/Book/bookService');
+const BookService = require('../../services/Book/BookService');
 const BookChapterService = require('../../services/Book/bookChapterService');
 const fileUploadService = require('../../services/fileUploadService');
 const ApiResponse = require('../../utils/response');
