@@ -22,13 +22,17 @@ app.use(helmet());
 
 // Allow CORS for all origins
 app.use(cors({
-  origin: true, // Reflects the request origin, as recommended for allowing all origins with credentials
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
   credentials: true
 }));
 
 // Handle preflight requests for all routes
 app.options('*', cors({
-  origin: true,
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
   credentials: true
 }));
 
