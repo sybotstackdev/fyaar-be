@@ -29,7 +29,7 @@ const bookSchema = new mongoose.Schema({
     },
     genres: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Genre' }],
     plots: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Plot' }],
-    narrative: { type: mongoose.Schema.Types.ObjectId, ref: 'Narrative' },
+    narrative: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Narrative' }],
     endings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Ending' }],
     spiceMoods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SpiceMood' }],
     locations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Location' }],

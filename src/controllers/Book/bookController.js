@@ -1,8 +1,9 @@
-const BookService = require('../../services/Book/BookService');
+const BookService = require('../../services/Book/bookService');
 const BookChapterService = require('../../services/Book/bookChapterService');
-const fileUploadService = require('../../services/fileUploadService');
+const { uploadToS3 } = require('../../services/fileUploadService');
 const ApiResponse = require('../../utils/response');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const ApiError = require('../../utils/ApiError');
 
 const createBook = asyncHandler(async (req, res) => {
     const book = await BookService.createBook(req.body);
@@ -10,7 +11,16 @@ const createBook = asyncHandler(async (req, res) => {
 });
 
 const getAllBooks = asyncHandler(async (req, res) => {
-    const result = await BookService.getAllBooks(req.query, req.user);
+    const { page, limit, sort, order, search, status, showDeleted } = req.query;
+    const result = await BookService.getAllBooks({
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+        sort: sort || 'createdAt',
+        order: order || 'desc',
+        search: search || '',
+        status: status || '',
+        showDeleted: showDeleted || 'false'
+    });
     return ApiResponse.success(res, 200, 'Books retrieved successfully', result);
 });
 
@@ -58,13 +68,12 @@ const reorderBookChapters = asyncHandler(async (req, res) => {
     return ApiResponse.success(res, 200, result.message, result);
 });
 
-const uploadCoverImage = asyncHandler(async (req, res) => {
+const uploadBookCover = asyncHandler(async (req, res) => {
     if (!req.file) {
-        return ApiResponse.error(res, 400, 'No file uploaded.');
+        throw new ApiError(400, 'No file uploaded.');
     }
-
-    const fileUrl = await fileUploadService.uploadAndOptimizeImage(req.file);
-    return ApiResponse.success(res, 201, 'Book cover uploaded successfully', { url: fileUrl });
+    const imageUrl = await uploadToS3(req.file, 'book_covers');
+    return ApiResponse.success(res, 200, 'Book cover uploaded successfully', { url: imageUrl });
 });
 
 module.exports = {
@@ -78,5 +87,5 @@ module.exports = {
     getBookAnalytics,
     getChaptersByBook,
     reorderBookChapters,
-    uploadCoverImage
+    uploadBookCover
 };

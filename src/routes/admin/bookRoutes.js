@@ -8,7 +8,7 @@ const {
     deleteBook,
     getBookAnalytics,
     getChaptersByBook,
-    uploadCoverImage,
+    uploadBookCover,
     permanentlyDeleteBook,
     reorderBookChapters
 } = require('../../controllers/Book/bookController');
@@ -16,25 +16,13 @@ const { authenticate, authorize, softAuthenticate } = require('../../middleware/
 const { apiLimiter } = require('../../middleware/rateLimiter');
 const {
     validateNewBook,
-    validateUpdateBook
+    validateUpdateBook,
+    validateReorderChapters
 } = require('../../middleware/validators/bookValidator');
 const { validateObjectId } = require('../../middleware/validator');
-const multer = require('multer');
+const upload = require('../../middleware/upload');
 
 const router = express.Router();
-
-const storage = multer.memoryStorage();
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed!'), false);
-        }
-    }
-});
 
 router.use(apiLimiter);
 
@@ -49,13 +37,14 @@ router.post('/upload-cover',
     authenticate,
     authorize('admin'),
     upload.single('file'),
-    uploadCoverImage
+    uploadBookCover
 );
 
-router.get('/', softAuthenticate, getAllBooks);
+router.get('/', authenticate, authorize('admin'), getAllBooks);
 
 router.get('/:id/chapters',
-    softAuthenticate,
+    authenticate,
+    authorize('admin'),
     validateObjectId,
     getChaptersByBook
 );
@@ -74,7 +63,9 @@ router.get('/analytics',
 );
 
 router.get('/:id',
-    validateObjectId, 
+    authenticate,
+    authorize('admin'),
+    validateObjectId,
     getBookById
 );
 

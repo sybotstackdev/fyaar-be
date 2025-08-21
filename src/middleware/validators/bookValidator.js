@@ -26,6 +26,18 @@ const validateNewBook = [
         .isMongoId()
         .withMessage('Each tag must be a valid ID'),
 
+    body('chapters')
+        .optional()
+        .isArray({ min: 1 }).withMessage('If provided, chapters must be an array with at least one item.'),
+    body('chapters.*.title')
+        .exists({ checkFalsy: true }).withMessage('Each chapter must have a title.')
+        .isString().withMessage('Chapter title must be a string.')
+        .isLength({ min: 3 }).withMessage('Chapter title must be at least 3 characters.'),
+    body('chapters.*.content')
+        .exists({ checkFalsy: true }).withMessage('Each chapter must have content.')
+        .isString().withMessage('Chapter content must be a string.')
+        .isLength({ min: 10 }).withMessage('Chapter content must be at least 10 characters.'),
+
     body('bookCover')
         .trim()
         .isURL()
@@ -49,8 +61,11 @@ const validateNewBook = [
 
     body('narrative')
         .optional()
+        .isArray()
+        .withMessage('Narrative must be an array of IDs'),
+    body('narrative.*')
         .isMongoId()
-        .withMessage('Narrative must be a valid ID'),
+        .withMessage('Each narrative must be a valid ID'),
 
     body('endings')
         .optional()
@@ -136,8 +151,11 @@ const validateUpdateBook = [
 
     body('narrative')
         .optional()
+        .isArray()
+        .withMessage('Narrative must be an array of IDs'),
+    body('narrative.*')
         .isMongoId()
-        .withMessage('Narrative must be a valid ID'),
+        .withMessage('Each narrative must be a valid ID'),
 
     body('endings')
         .optional()

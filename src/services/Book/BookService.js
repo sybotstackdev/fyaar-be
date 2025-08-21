@@ -1,34 +1,60 @@
+const mongoose = require('mongoose');
 const Book = require('../../models/bookModel');
+const BookChapter = require('../../models/bookChapterModel');
 const logger = require('../../utils/logger');
 
 const createBook = async (bookData) => {
+    const { chapters, ...bookDetails } = bookData;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        const book = new Book(bookData);
-        await book.save();
-        logger.info(`New book created: ${book.title}`);
+        const book = new Book(bookDetails);
+        await book.save({ session });
+
+        if (chapters && Array.isArray(chapters) && chapters.length > 0) {
+            const chaptersToCreate = chapters.map((chapter, index) => ({
+                ...chapter,
+                book: book._id,
+                order: index + 1
+            }));
+            await BookChapter.insertMany(chaptersToCreate, { session });
+        }
+
+        await session.commitTransaction();
+        logger.info(`New book created successfully: ${book.title}`);
         return book;
+
     } catch (error) {
-        logger.error('Book creation error:', error.message);
+        await session.abortTransaction();
+        logger.error('Book creation failed, transaction aborted:', error.message);
         throw error;
+    } finally {
+        session.endSession();
     }
 };
 
-const getAllBooks = async (options = {}, user = null) => {
+const getAllBooks = async (options = {}) => {
     try {
 
         const { page = 1, limit = 10, sort = 'createdAt', order = 'desc', search = '', status = '', showDeleted = 'false' } = options;
 
-        const query = {};
-        const isAdmin = user && user.role === 'admin';
 
-        if (isAdmin && showDeleted === 'true') {
+        const query = {};
+
+        if (showDeleted === 'true') {
             query.deletedAt = { $ne: null };
         } else {
             query.deletedAt = null;
         }
 
         if (search) {
-            query.$text = { $search: search };
+            query.title = { $regex: search, $options: 'i' };
+        }
+
+        if (status) {
+            query.status = status;
         }
 
 
@@ -38,12 +64,12 @@ const getAllBooks = async (options = {}, user = null) => {
         const books = await Book.find(query).sort(sortObj).skip(skip).limit(limit)
             .populate('authors', 'authorName')
             .populate('tags', 'name')
-            .populate('genres', 'title')
-            .populate('spiceMoods', 'title')
-            .populate('locations', 'title')
-            .populate('plots', 'title')
-            .populate('narrative', 'title')
-            .populate('endings', 'title');
+            .populate('genres', 'title');
+            // .populate('spiceMoods', 'title')
+            // .populate('locations', 'title')
+            // .populate('plots', 'title')
+            // .populate('narrative', 'title')
+            // .populate('endings', 'title');
 
         const total = await Book.countDocuments(query);
         const totalPages = Math.ceil(total / limit);
