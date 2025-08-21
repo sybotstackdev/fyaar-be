@@ -2,22 +2,19 @@ const express = require('express');
 const {
     createBook,
     getAllBooks,
-    restoreBook,
     getBookById,
     updateBook,
-    deleteBook,
     getBookAnalytics,
     getChaptersByBook,
     uploadBookCover,
-    permanentlyDeleteBook,
+    deleteBook,
     reorderBookChapters
 } = require('../../controllers/Book/bookController');
-const { authenticate, authorize, softAuthenticate } = require('../../middleware/auth');
+const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
 const {
     validateNewBook,
-    validateUpdateBook,
-    validateReorderChapters
+    validateUpdateBook
 } = require('../../middleware/validators/bookValidator');
 const { validateObjectId } = require('../../middleware/validator');
 const upload = require('../../middleware/upload');
@@ -82,20 +79,6 @@ router.delete('/:id',
     authorize('admin'),
     validateObjectId,
     deleteBook
-);
-
-router.patch('/:id/restore',
-    authenticate,
-    authorize('admin'),
-    validateObjectId,
-    restoreBook
-);
-
-router.delete('/:id/permanent',
-    authenticate,
-    authorize('admin'),
-    validateObjectId,
-    permanentlyDeleteBook
 );
 
 module.exports = router;

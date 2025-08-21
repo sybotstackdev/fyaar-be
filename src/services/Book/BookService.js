@@ -38,16 +38,10 @@ const createBook = async (bookData) => {
 const getAllBooks = async (options = {}) => {
     try {
 
-        const { page = 1, limit = 10, sort = 'createdAt', order = 'desc', search = '', status = '', showDeleted = 'false' } = options;
+        const { page = 1, limit = 10, sort = 'createdAt', order = 'desc', search = '', status = '' } = options;
 
 
         const query = {};
-
-        if (showDeleted === 'true') {
-            query.deletedAt = { $ne: null };
-        } else {
-            query.deletedAt = null;
-        }
 
         if (search) {
             query.title = { $regex: search, $options: 'i' };
@@ -65,11 +59,11 @@ const getAllBooks = async (options = {}) => {
             .populate('authors', 'authorName')
             .populate('tags', 'name')
             .populate('genres', 'title');
-            // .populate('spiceMoods', 'title')
-            // .populate('locations', 'title')
-            // .populate('plots', 'title')
-            // .populate('narrative', 'title')
-            // .populate('endings', 'title');
+        // .populate('spiceMoods', 'title')
+        // .populate('locations', 'title')
+        // .populate('plots', 'title')
+        // .populate('narrative', 'title')
+        // .populate('endings', 'title');
 
         const total = await Book.countDocuments(query);
         const totalPages = Math.ceil(total / limit);
@@ -86,7 +80,7 @@ const getAllBooks = async (options = {}) => {
 
 const getBookById = async (bookId) => {
     try {
-        const book = await Book.findOne({ _id: bookId, deletedAt: null })
+        const book = await Book.findOne({ _id: bookId })
             .populate('authors')
             .populate('tags')
             .populate('spiceMoods')
@@ -105,7 +99,7 @@ const getBookById = async (bookId) => {
 
 const updateBook = async (bookId, updateData) => {
     try {
-        const book = await Book.findOneAndUpdate({ _id: bookId, deletedAt: null }, updateData, { new: true, runValidators: true });
+        const book = await Book.findOneAndUpdate({ _id: bookId }, updateData, { new: true, runValidators: true });
         if (!book) throw new Error('Book not found');
         logger.info(`Book updated: ${book.title}`);
         return book;
@@ -115,24 +109,12 @@ const updateBook = async (bookId, updateData) => {
     }
 };
 
-const softDeleteBook = async (bookId) => {
-    try {
-        const book = await Book.findOneAndUpdate({ _id: bookId, deletedAt: null }, { deletedAt: new Date() }, { new: true });
-        if (!book) throw new Error('Book not found');
-        logger.info(`Book soft-deleted: ${book.title}`);
-        return true;
-    } catch (error) {
-        logger.error('Soft delete book error:', error.message);
-        throw error;
-    }
-};
-
 const getBookAnalytics = async (options = {}) => {
     try {
         const { top = 10, sortBy = 'count', order = 'desc' } = options;
 
         const topGenres = await Book.aggregate([
-            { $match: { deletedAt: null, status: 'published' } },
+            { $match: { status: 'published' } },
             { $unwind: '$genres' },
             { $group: { _id: '$genres', count: { $sum: 1 } } },
             { $sort: { [sortBy]: order === 'desc' ? -1 : 1 } },
@@ -149,35 +131,19 @@ const getBookAnalytics = async (options = {}) => {
     }
 };
 
-const restoreBook = async (bookId) => {
+const deleteBook = async (bookId) => {
     try {
-        const book = await Book.findOneAndUpdate({ _id: bookId, deletedAt: { $ne: null } }, { deletedAt: null }, { new: true });
-        if (!book) {
-            throw new Error('Book not found or is not deleted.');
-        }
-        logger.info(`Book restored: ${book.title}`);
-        return book;
-    } catch (error) {
-        logger.error('Restore book error:', error.message);
-        throw error;
-    }
-};
-
-const permanentlyDeleteBook = async (bookId) => {
-    try {
-        // First, delete all chapters associated with the book
         const chapterDeletionResult = await BookChapter.deleteMany({ book: bookId });
         logger.info(`Deleted ${chapterDeletionResult.deletedCount} chapters for book ${bookId}.`);
 
-        // Then, permanently delete the book itself
         const book = await Book.findByIdAndDelete(bookId);
         if (!book) {
             throw new Error('Book not found');
         }
-        logger.info(`Book permanently deleted: ${book.title}`);
+        logger.info(`Book deleted: ${book.title}`);
         return true;
     } catch (error) {
-        logger.error('Permanent delete book error:', error.message);
+        logger.error('Delete book error:', error.message);
         throw error;
     }
 };
@@ -187,8 +153,6 @@ module.exports = {
     getAllBooks,
     getBookById,
     updateBook,
-    softDeleteBook,
     getBookAnalytics,
-    restoreBook,
-    permanentlyDeleteBook
+    deleteBook
 };

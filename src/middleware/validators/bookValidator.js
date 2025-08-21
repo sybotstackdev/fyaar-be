@@ -1,209 +1,109 @@
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../validator');
 
-const validateNewBook = [
-    body('title')
-        .trim()
-        .isLength({ min: 2, max: 200 })
-        .withMessage('Book title must be between 2 and 200 characters'),
+const wordCount = (str) => {
+    if (!str) return 0;
+    return str.trim().split(/\s+/).length;
+};
 
+const validateNewBook = [
+    body('title').trim().notEmpty().withMessage('Title is required.'),
     body('description')
         .trim()
-        .isLength({ min: 10, max: 5000 })
-        .withMessage('Book description must be between 10 and 5000 characters'),
-
-    body('authors')
-        .isArray({ min: 1 })
-        .withMessage('At least one author is required'),
-    body('authors.*')
-        .isMongoId()
-        .withMessage('Each author must be a valid ID'),
-
-    body('tags')
-        .isArray({ min: 1 })
-        .withMessage('At least one tag is required'),
-    body('tags.*')
-        .isMongoId()
-        .withMessage('Each tag must be a valid ID'),
-
-    body('chapters')
-        .optional()
-        .isArray({ min: 1 }).withMessage('If provided, chapters must be an array with at least one item.'),
-    body('chapters.*.title')
-        .exists({ checkFalsy: true }).withMessage('Each chapter must have a title.')
-        .isString().withMessage('Chapter title must be a string.')
-        .isLength({ min: 3 }).withMessage('Chapter title must be at least 3 characters.'),
-    body('chapters.*.content')
-        .exists({ checkFalsy: true }).withMessage('Each chapter must have content.')
-        .isString().withMessage('Chapter content must be a string.')
-        .isLength({ min: 10 }).withMessage('Chapter content must be at least 10 characters.'),
-
-    body('bookCover')
-        .trim()
-        .isURL()
-        .withMessage('Book cover must be a valid URL'),
-
-    body('genres')
-        .optional()
-        .isArray()
-        .withMessage('Genres must be an array of IDs'),
-    body('genres.*')
-        .isMongoId()
-        .withMessage('Each genre must be a valid ID'),
-
-    body('plots')
-        .optional()
-        .isArray()
-        .withMessage('Plots must be an array of IDs'),
-    body('plots.*')
-        .isMongoId()
-        .withMessage('Each plot must be a valid ID'),
-
-    body('narrative')
-        .optional()
-        .isArray()
-        .withMessage('Narrative must be an array of IDs'),
-    body('narrative.*')
-        .isMongoId()
-        .withMessage('Each narrative must be a valid ID'),
-
-    body('endings')
-        .optional()
-        .isArray()
-        .withMessage('Endings must be an array of IDs'),
-    body('endings.*')
-        .isMongoId()
-        .withMessage('Each ending must be a valid ID'),
-
-    body('spiceMoods')
-        .optional()
-        .isArray()
-        .withMessage('Spice moods must be an array of IDs'),
-    body('spiceMoods.*')
-        .isMongoId()
-        .withMessage('Each spice mood must be a valid ID'),
-
-    body('locations')
-        .optional()
-        .isArray()
-        .withMessage('Locations must be an array of IDs'),
-    body('locations.*')
-        .isMongoId()
-        .withMessage('Each location must be a valid ID'),
-
-    body('status')
-        .optional()
-        .isIn(['draft', 'published', 'archived'])
-        .withMessage('Status must be one of: draft, published, archived'),
-
+        .notEmpty().withMessage('Description is required.')
+        .custom(value => {
+            const count = wordCount(value);
+            if (count < 2) {
+                throw new Error('Description must be at least 5 words.');
+            }
+            if (count > 500) {
+                throw new Error('Description cannot exceed 500 words.');
+            }
+            return true;
+        }),
+    body('authors').isArray({ min: 1 }).withMessage('At least one author is required.'),
+    body('tags').isArray({ min: 1 }).withMessage('At least one tag is required.'),
+    body('bookCover').trim().notEmpty().withMessage('Book cover is required.'),
+    body('status').optional().isIn(['draft', 'published', 'archived']).withMessage('Invalid status.'),
+    body('chapters').optional().isArray().withMessage('Chapters must be an array.'),
+    body('chapters.*.title').optional().trim().notEmpty().withMessage('Chapter title is required.'),
+    body('chapters.*.content').optional().trim().notEmpty().withMessage('Chapter content is required.')
+        .custom(value => {
+            const count = wordCount(value);
+            if (count < 5) {
+                throw new Error('Chapter content must be at least 5 words.');
+            }
+            if (count > 5000) {
+                throw new Error('Chapter content cannot exceed 5000 words.');
+            }
+            return true;
+        }),
     handleValidationErrors
 ];
-
 
 const validateUpdateBook = [
-    body('title')
-        .optional()
+    body('title').optional().trim().notEmpty().withMessage('Title is required.'),
+    body('description').optional()
         .trim()
-        .isLength({ min: 2, max: 200 })
-        .withMessage('Book title must be between 2 and 200 characters'),
-    body('description')
-        .optional()
-        .trim()
-        .isLength({ min: 10, max: 5000 })
-        .withMessage('Book description must be between 10 and 5000 characters'),
-    body('authors')
-        .optional()
-        .isArray({ min: 1 })
-        .withMessage('At least one author is required'),
-    body('authors.*')
-        .isMongoId()
-        .withMessage('Each author must be a valid ID'),
-
-    body('tags')
-        .optional()
-        .isArray({ min: 1 })
-        .withMessage('At least one tag is required'),
-    body('tags.*')
-        .isMongoId()
-        .withMessage('Each tag must be a valid ID'),
-
-    body('bookCover')
-        .optional()
-        .trim()
-        .isURL()
-        .withMessage('Book cover must be a valid URL'),
-
-    body('genres')
-        .optional()
-        .isArray()
-        .withMessage('Genres must be an array of IDs'),
-    body('genres.*')
-        .isMongoId()
-        .withMessage('Each genre must be a valid ID'),
-
-    body('plots')
-        .optional()
-        .isArray()
-        .withMessage('Plots must be an array of IDs'),
-    body('plots.*')
-        .isMongoId()
-        .withMessage('Each plot must be a valid ID'),
-
-    body('narrative')
-        .optional()
-        .isArray()
-        .withMessage('Narrative must be an array of IDs'),
-    body('narrative.*')
-        .isMongoId()
-        .withMessage('Each narrative must be a valid ID'),
-
-    body('endings')
-        .optional()
-        .isArray()
-        .withMessage('Endings must be an array of IDs'),
-    body('endings.*')
-        .isMongoId()
-        .withMessage('Each ending must be a valid ID'),
-
-    body('spiceMoods')
-        .optional()
-        .isArray()
-        .withMessage('Spice moods must be an array of IDs'),
-    body('spiceMoods.*')
-        .isMongoId()
-        .withMessage('Each spice mood must be a valid ID'),
-
-    body('locations')
-        .optional()
-        .isArray()
-        .withMessage('Locations must be an array of IDs'),
-    body('locations.*')
-        .isMongoId()
-        .withMessage('Each location must be a valid ID'),
-
-    body('status')
-        .optional()
-        .isIn(['draft', 'published', 'archived'])
-        .withMessage('Status must be one of: draft, published, archived'),
-
+        .notEmpty().withMessage('Description is required.')
+        .custom(value => {
+            const count = wordCount(value);
+            if (count < 2) {
+                throw new Error('Description must be at least 2 words.');
+            }
+            if (count > 1000) {
+                throw new Error('Description cannot exceed 1000 words.');
+            }
+            return true;
+        }),
+    body('authors').optional().isArray({ min: 1 }).withMessage('At least one author is required.'),
+    body('tags').optional().isArray({ min: 1 }).withMessage('At least one tag is required.'),
+    body('genre').optional().trim().notEmpty().withMessage('Genre is required.'),
+    body('plot').optional().trim().notEmpty().withMessage('Plot is required.'),
+    body('spiceMood').optional().trim().notEmpty().withMessage('Spice & Mood is required.'),
+    body('ending').optional().trim().notEmpty().withMessage('Ending is required.'),
+    body('bookCover').optional().trim().notEmpty().withMessage('Book cover is required.'),
+    body('status').optional().isIn(['draft', 'published', 'archived']).withMessage('Invalid status.'),
     handleValidationErrors
 ];
 
-
 const validateNewChapter = [
-    body('book').isMongoId().withMessage('Book must be a valid MongoDB ObjectId'),
-    body('title').trim().isLength({ min: 2, max: 200 }).withMessage('Chapter title must be between 2 and 200 characters'),
-    body('content').trim().isLength({ min: 10 }).withMessage('Chapter content must be at least 10 characters'),
-    body('status').optional().isIn(['draft', 'published']).withMessage('Status must be one of: draft, published'),
+    body('title').trim().notEmpty().withMessage('Title is required.'),
+    body('content')
+        .trim()
+        .notEmpty().withMessage('Content is required.')
+        .custom(value => {
+            const count = wordCount(value);
+            if (count < 5) {
+                throw new Error('Content must be at least 5 words.');
+            }
+            if (count > 5000) {
+                throw new Error('Content cannot exceed 5000 words.');
+            }
+            return true;
+        }),
+    body('book').isMongoId().withMessage('Valid book ID is required.'),
+    body('status').optional().isIn(['draft', 'published', 'archived']).withMessage('Invalid status.'),
     handleValidationErrors
 ];
 
 const validateUpdateChapter = [
-    body('book').optional().isMongoId().withMessage('Book must be a valid MongoDB ObjectId'),
-    body('title').optional().trim().isLength({ min: 2, max: 200 }).withMessage('Chapter title must be between 2 and 200 characters'),
-    body('content').optional().trim().isLength({ min: 10 }).withMessage('Chapter content must be at least 10 characters'),
-    body('order').optional().isInt({ min: 1 }).withMessage('Chapter order must be a positive integer'),
-    body('status').optional().isIn(['draft', 'published']).withMessage('Status must be one of: draft, published'),
+    param('id').isMongoId().withMessage('Invalid chapter ID.'),
+    body('title').optional().trim().notEmpty().withMessage('Title is required.'),
+    body('content').optional()
+        .trim()
+        .notEmpty().withMessage('Content is required.')
+        .custom(value => {
+            const count = wordCount(value);
+            if (count < 5) {
+                throw new Error('Content must be at least 5 words.');
+            }
+            if (count > 5000) {
+                throw new Error('Content cannot exceed 5000 words.');
+            }
+            return true;
+        }),
+    body('status').optional().isIn(['draft', 'published', 'archived']).withMessage('Invalid status.'),
     handleValidationErrors
 ];
 

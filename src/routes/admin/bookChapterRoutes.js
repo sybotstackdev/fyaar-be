@@ -3,10 +3,9 @@ const {
     createChapter,
     getChapterById,
     updateChapter,
-    deleteChapter,
-    permanentlyDeleteChapter
+    deleteChapter
 } = require('../../controllers/Book/bookChapterController');
-const { authenticate, authorize, softAuthenticate } = require('../../middleware/auth');
+const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
 const { validateNewChapter, validateUpdateChapter } = require('../../middleware/validators/bookValidator');
 const { validateObjectId } = require('../../middleware/validator');
@@ -23,7 +22,8 @@ router.post('/',
 );
 
 router.get('/:id',
-    softAuthenticate,
+    authenticate,
+    authorize('admin'),
     validateObjectId,
     getChapterById
 );
@@ -41,13 +41,6 @@ router.delete('/:id',
     authorize('admin'),
     validateObjectId,
     deleteChapter
-);
-
-router.delete('/:id/permanent',
-    authenticate,
-    authorize('admin'),
-    validateObjectId,
-    permanentlyDeleteChapter
 );
 
 module.exports = router;

@@ -18,25 +18,13 @@ const updateChapter = asyncHandler(async (req, res) => {
 });
 
 const deleteChapter = asyncHandler(async (req, res) => {
-    await BookChapterService.softDeleteChapter(req.params.id);
-    return ApiResponse.success(res, 200, 'Chapter soft-deleted successfully');
-});
-
-const restoreChapter = asyncHandler(async (req, res) => {
-    const restoredChapter = await BookChapterService.restoreChapter(req.params.id);
-    return ApiResponse.success(res, 200, 'Chapter restored successfully', restoredChapter);
-});
-
-const permanentlyDeleteChapter = asyncHandler(async (req, res) => {
-    await BookChapterService.permanentlyDeleteChapter(req.params.id);
-    return ApiResponse.success(res, 200, 'Chapter permanently deleted successfully');
+    await BookChapterService.deleteChapter(req.params.id);
+    return ApiResponse.success(res, 200, 'Chapter deleted successfully');
 });
 
 module.exports = {
     createChapter,
     getChapterById,
     updateChapter,
-    deleteChapter,
-    restoreChapter,
-    permanentlyDeleteChapter
+    deleteChapter
 };

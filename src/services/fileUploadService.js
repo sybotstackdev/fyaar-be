@@ -27,7 +27,7 @@ const uploadToS3 = async (file, folder) => {
 
         const data = await s3.upload(params).promise();
         logger.info(`Successfully uploaded image to S3: ${data.Location}`);
-        return buildCdnUrl(fileName);
+        return data.Location;
 
     } catch (error) {
         logger.error("Error optimizing or uploading image to S3:", error);

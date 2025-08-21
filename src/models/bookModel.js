@@ -35,13 +35,8 @@ const bookSchema = new mongoose.Schema({
     locations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Location' }],
     status: {
         type: String,
-        enum: ['draft', 'published', 'archived'],
-        default: 'draft',
-        index: true
-    },
-    deletedAt: {
-        type: Date,
-        default: null,
+        enum: ['draft', 'published', 'archived', 'unpublished'],
+        default: 'unpublished',
         index: true
     },
     slug: {

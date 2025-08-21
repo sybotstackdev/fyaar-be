@@ -5,23 +5,19 @@ const logger = require('../../utils/logger');
 const createChapter = async (chapterData) => {
     try {
         const book = await Book.findById(chapterData.book);
-        if (!book || book.deletedAt) {
+        if (!book) {
             throw new Error('Book not found');
         }
 
-        // --- Automatic Order Logic ---
-        // Find the chapter with the highest order for this book
         const highestOrderChapter = await BookChapter.findOne({ book: chapterData.book })
             .sort({ order: -1 })
             .limit(1);
 
-        // Set the order for the new chapter
         const newOrder = highestOrderChapter ? highestOrderChapter.order + 1 : 1;
-        // --- End of Logic ---
 
         const chapter = new BookChapter({
             ...chapterData,
-            order: newOrder // Overwrite any user-provided order
+            order: newOrder
         });
 
         await chapter.save();
@@ -33,25 +29,14 @@ const createChapter = async (chapterData) => {
     }
 };
 
-const getChaptersByBook = async (bookId, options = {}, user = null) => {
+const getChaptersByBook = async (bookId, options = {}) => {
     try {
-        const { page = 1, limit = 10, sort = 'order', order = 'asc', status = '', showDeleted = 'false' } = options;
+        const { page = 1, limit = 10, sort = 'order', order = 'asc', status = '' } = options;
 
         const query = { book: bookId };
-        const isAdmin = user && user.role === 'admin';
 
-        if (isAdmin && showDeleted === 'true') {
-            query.deletedAt = { $ne: null };
-        } else {
-            query.deletedAt = null;
-        }
-
-        if (isAdmin) {
-            if (status) {
-                query.status = status;
-            }
-        } else {
-            query.status = 'published';
+        if (status) {
+            query.status = status;
         }
 
         const skip = (page - 1) * limit;
@@ -75,19 +60,12 @@ const getChaptersByBook = async (bookId, options = {}, user = null) => {
     }
 };
 
-const getChapterById = async (chapterId, user = null) => {
+const getChapterById = async (chapterId) => {
     try {
         const chapter = await BookChapter.findOne({ _id: chapterId }).populate('book', 'title');
 
         if (!chapter) {
             throw new Error('Chapter not found');
-        }
-
-        if (chapter.status === 'draft') {
-            const isAdmin = user && user.role === 'admin';
-            if (!isAdmin) {
-                throw new Error('Chapter not found');
-            }
         }
 
         return chapter;
@@ -99,7 +77,7 @@ const getChapterById = async (chapterId, user = null) => {
 
 const updateChapter = async (chapterId, updateData) => {
     try {
-        const chapter = await BookChapter.findOneAndUpdate({ _id: chapterId, deletedAt: null }, updateData, { new: true, runValidators: true });
+        const chapter = await BookChapter.findOneAndUpdate({ _id: chapterId }, updateData, { new: true, runValidators: true });
         if (!chapter) {
             throw new Error('Chapter not found');
         }
@@ -111,25 +89,11 @@ const updateChapter = async (chapterId, updateData) => {
     }
 };
 
-const softDeleteChapter = async (chapterId) => {
-    try {
-        const chapter = await BookChapter.findOneAndUpdate({ _id: chapterId, deletedAt: null }, { deletedAt: new Date() }, { new: true });
-        if (!chapter) {
-            throw new Error('Chapter not found');
-        }
-        logger.info(`Chapter soft-deleted: ${chapter.title}`);
-        return true;
-    } catch (error) {
-        logger.error('Soft delete chapter error:', error.message);
-        throw error;
-    }
-};
-
 const reorderChapters = async (bookId, orderedChapterIds) => {
     try {
         const updatePromises = orderedChapterIds.map((chapterId, index) => {
             return BookChapter.updateOne(
-                { _id: chapterId, book: bookId }, // Ensure the chapter belongs to the correct book
+                { _id: chapterId, book: bookId },
                 { $set: { order: index + 1 } }
             );
         });
@@ -143,30 +107,16 @@ const reorderChapters = async (bookId, orderedChapterIds) => {
     }
 };
 
-const restoreChapter = async (chapterId) => {
-    try {
-        const chapter = await BookChapter.findOneAndUpdate({ _id: chapterId, deletedAt: { $ne: null } }, { deletedAt: null }, { new: true });
-        if (!chapter) {
-            throw new Error('Chapter not found or is not deleted.');
-        }
-        logger.info(`Chapter restored: ${chapter.title}`);
-        return chapter;
-    } catch (error) {
-        logger.error('Restore chapter error:', error.message);
-        throw error;
-    }
-};
-
-const permanentlyDeleteChapter = async (chapterId) => {
+const deleteChapter = async (chapterId) => {
     try {
         const chapter = await BookChapter.findByIdAndDelete(chapterId);
         if (!chapter) {
             throw new Error('Chapter not found');
         }
-        logger.info(`Chapter permanently deleted: ${chapter.title}`);
+        logger.info(`Chapter deleted: ${chapter.title}`);
         return true;
     } catch (error) {
-        logger.error('Permanent delete chapter error:', error.message);
+        logger.error('Delete chapter error:', error.message);
         throw error;
     }
 };
@@ -176,8 +126,6 @@ module.exports = {
     getChaptersByBook,
     getChapterById,
     updateChapter,
-    softDeleteChapter,
     reorderChapters,
-    restoreChapter,
-    permanentlyDeleteChapter
+    deleteChapter
 };

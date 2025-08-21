@@ -35,18 +35,8 @@ const updateBook = asyncHandler(async (req, res) => {
 });
 
 const deleteBook = asyncHandler(async (req, res) => {
-    await BookService.softDeleteBook(req.params.id);
-    return ApiResponse.success(res, 200, 'Book soft-deleted successfully');
-});
-
-const restoreBook = asyncHandler(async (req, res) => {
-    const restoredBook = await BookService.restoreBook(req.params.id);
-    return ApiResponse.success(res, 200, 'Book restored successfully', restoredBook);
-});
-
-const permanentlyDeleteBook = asyncHandler(async (req, res) => {
-    await BookService.permanentlyDeleteBook(req.params.id);
-    return ApiResponse.success(res, 200, 'Book permanently deleted successfully');
+    await BookService.deleteBook(req.params.id);
+    return ApiResponse.success(res, 200, 'Book deleted successfully');
 });
 
 const getBookAnalytics = asyncHandler(async (req, res) => {
@@ -55,7 +45,17 @@ const getBookAnalytics = asyncHandler(async (req, res) => {
 });
 
 const getChaptersByBook = asyncHandler(async (req, res) => {
-    const result = await BookChapterService.getChaptersByBook(req.params.id, req.query, req.user);
+    const bookId = req.params.id;
+    const { page, limit, sort, order, search, status, showDeleted } = req.query;
+    const result = await BookChapterService.getChaptersByBook(bookId, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+        sort: sort || 'order',
+        order: order || 'asc',
+        search: search || '',
+        status: status || '',
+        showDeleted: showDeleted || 'false'
+    });
     return ApiResponse.success(res, 200, 'Chapters for book retrieved successfully', result);
 });
 
@@ -82,8 +82,6 @@ module.exports = {
     getBookById,
     updateBook,
     deleteBook,
-    restoreBook,
-    permanentlyDeleteBook,
     getBookAnalytics,
     getChaptersByBook,
     reorderBookChapters,
