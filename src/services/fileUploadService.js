@@ -4,9 +4,9 @@ const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
 const logger = require('../utils/logger');
 
-function buildCdnUrl(key) {
-    return `${process.env.AWS_CLOUDFRONT_DOMAIN.replace(/\/$/, '')}/${key}`;
-}
+// function buildCdnUrl(key) {
+//     return `${process.env.AWS_CLOUDFRONT_DOMAIN.replace(/\/$/, '')}/${key}`;
+// }
 
 const uploadToS3 = async (file, folder) => {
     try {
