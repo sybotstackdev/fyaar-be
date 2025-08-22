@@ -6,7 +6,7 @@ const { asyncHandler } = require('../../middleware/errorHandler');
 const ApiError = require('../../utils/ApiError');
 
 const createBook = asyncHandler(async (req, res) => {
-    const book = await BookService.createBook(req.body);
+    const book = await BookService.createBook(req.body, req.user._id);
     return ApiResponse.created(res, 'Book created successfully', book);
 });
 
@@ -76,6 +76,17 @@ const uploadBookCover = asyncHandler(async (req, res) => {
     return ApiResponse.success(res, 200, 'Book cover uploaded successfully', { url: imageUrl });
 });
 
+const updateBookCover = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        throw new ApiError(400, 'No file uploaded.');
+    }
+    const updatedBookUrl = await BookService.updateBookCover(req.params.id, req.file);
+    const response = {
+        url: updatedBookUrl
+    }
+    return ApiResponse.success(res, 200, 'Book cover updated successfully', response);
+});
+
 module.exports = {
     createBook,
     getAllBooks,
@@ -85,5 +96,6 @@ module.exports = {
     getBookAnalytics,
     getChaptersByBook,
     reorderBookChapters,
-    uploadBookCover
+    uploadBookCover,
+    updateBookCover
 };

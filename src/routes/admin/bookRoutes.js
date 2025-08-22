@@ -8,7 +8,8 @@ const {
     getChaptersByBook,
     uploadBookCover,
     deleteBook,
-    reorderBookChapters
+    reorderBookChapters,
+    updateBookCover
 } = require('../../controllers/Book/bookController');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
@@ -79,6 +80,14 @@ router.delete('/:id',
     authorize('admin'),
     validateObjectId,
     deleteBook
+);
+
+router.patch('/:id/cover',
+    authenticate,
+    authorize('admin'),
+    validateObjectId,
+    upload.single('file'),
+    updateBookCover
 );
 
 module.exports = router;

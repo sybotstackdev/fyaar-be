@@ -39,6 +39,19 @@ const bookSchema = new mongoose.Schema({
         default: 'unpublished',
         index: true
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User ID is required']
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
+    deletedAt: {
+        type: Date,
+        default: null
+    },
     slug: {
         type: String,
         unique: true,
@@ -66,7 +79,6 @@ bookSchema.index({ endings: 1 });
 
 // Slug generation
 bookSchema.pre('save', async function (next) {
-    // Only run this function if the title was modified (or it's a new book)
     if (!this.isModified('title')) {
         return next();
     }
@@ -81,15 +93,20 @@ bookSchema.pre('save', async function (next) {
     let slug = baseSlug;
     let counter = 2;
 
-    // Check if a book with the generated slug already exists
-    // `this.constructor` refers to the Book model
     while (await this.constructor.findOne({ slug: slug })) {
-        // If it exists, append a counter and check again
         slug = `${baseSlug}-${counter}`;
         counter++;
     }
 
     this.slug = slug;
+    next();
+});
+
+// Soft delete
+bookSchema.pre('findOneAndUpdate', async function (next) {
+    if (this.getUpdate().isDeleted) {
+        this.getUpdate().deletedAt = new Date();
+    }
     next();
 });
 

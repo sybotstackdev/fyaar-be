@@ -2,15 +2,17 @@ const mongoose = require('mongoose');
 const Book = require('../../models/bookModel');
 const BookChapter = require('../../models/bookChapterModel');
 const logger = require('../../utils/logger');
+const { uploadToS3, deleteFromS3 } = require('../fileUploadService');
+const ApiError = require('../../utils/ApiError');
 
-const createBook = async (bookData) => {
+const createBook = async (bookData, userId) => {
     const { chapters, ...bookDetails } = bookData;
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        const book = new Book(bookDetails);
+        const book = new Book({ ...bookDetails, userId });
         await book.save({ session });
 
         if (chapters && Array.isArray(chapters) && chapters.length > 0) {
@@ -89,7 +91,7 @@ const getBookById = async (bookId) => {
             .populate('narrative')
             .populate('endings')
             .populate('genres');
-        if (!book) throw new Error('Book not found');
+        if (!book) throw new ApiError(404, 'Book not found');
         return book;
     } catch (error) {
         logger.error('Get book by ID error:', error.message);
@@ -100,7 +102,7 @@ const getBookById = async (bookId) => {
 const updateBook = async (bookId, updateData) => {
     try {
         const book = await Book.findOneAndUpdate({ _id: bookId }, updateData, { new: true, runValidators: true });
-        if (!book) throw new Error('Book not found');
+        if (!book) throw new ApiError(404, 'Book not found');
         logger.info(`Book updated: ${book.title}`);
         return book;
     } catch (error) {
@@ -138,12 +140,40 @@ const deleteBook = async (bookId) => {
 
         const book = await Book.findByIdAndDelete(bookId);
         if (!book) {
-            throw new Error('Book not found');
+            throw new ApiError(404, 'Book not found');
         }
         logger.info(`Book deleted: ${book.title}`);
         return true;
     } catch (error) {
         logger.error('Delete book error:', error.message);
+        throw error;
+    }
+};
+
+const updateBookCover = async (bookId, file) => {
+    try {
+        if (!file) {
+            throw new ApiError(400, 'No file provided for upload.');
+        }
+
+        const book = await Book.findById(bookId);
+        if (!book) {
+            throw new ApiError(404, 'Book not found');
+        }
+        const oldCoverPhotoUrl = book.bookCover;
+        const newCoverPhotoUrl = await uploadToS3(file, 'book_covers');
+
+        book.bookCover = newCoverPhotoUrl;
+        await book.save();
+
+        if (oldCoverPhotoUrl) {
+            await deleteFromS3(oldCoverPhotoUrl);
+        }
+
+        logger.info(`Book cover updated for book: ${book.title}`);
+        return newCoverPhotoUrl;
+    } catch (error) {
+        logger.error('Update book cover error:', error.message);
         throw error;
     }
 };
@@ -154,5 +184,6 @@ module.exports = {
     getBookById,
     updateBook,
     getBookAnalytics,
-    deleteBook
+    deleteBook,
+    updateBookCover
 };
