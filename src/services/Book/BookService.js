@@ -101,8 +101,20 @@ const getBookById = async (bookId) => {
 
 const updateBook = async (bookId, updateData) => {
     try {
-        const book = await Book.findOneAndUpdate({ _id: bookId }, updateData, { new: true, runValidators: true });
+        const book = await Book.findByIdAndUpdate(bookId, updateData, { new: true, runValidators: true });
         if (!book) throw new ApiError(404, 'Book not found');
+
+        await book.populate([
+            { path: 'authors' },
+            { path: 'tags' },
+            { path: 'spiceMoods' },
+            { path: 'locations' },
+            { path: 'plots' },
+            { path: 'narrative' },
+            { path: 'endings' },
+            { path: 'genres' }
+        ]);
+
         logger.info(`Book updated: ${book.title}`);
         return book;
     } catch (error) {

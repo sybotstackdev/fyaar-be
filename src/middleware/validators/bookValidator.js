@@ -63,7 +63,7 @@ const validateUpdateBook = [
     body('spiceMood').optional().trim().notEmpty().withMessage('Spice & Mood is required.'),
     body('ending').optional().trim().notEmpty().withMessage('Ending is required.'),
     body('bookCover').optional().trim().notEmpty().withMessage('Book cover is required.'),
-    body('status').optional().isIn(['draft', 'published', 'archived']).withMessage('Invalid status.'),
+    body('status').optional().isIn(['draft', 'published', 'unpublished']).withMessage('Invalid status.'),
     handleValidationErrors
 ];
 
