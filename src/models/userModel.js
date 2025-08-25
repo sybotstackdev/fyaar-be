@@ -4,15 +4,15 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
-    required: [true, 'First name is required'],
     trim: true,
-    maxlength: [50, 'First name cannot be more than 50 characters']
+    maxlength: [50, 'First name cannot be more than 50 characters'],
+    default: null
   },
   lastName: {
     type: String,
-    required: [true, 'Last name is required'],
     trim: true,
-    maxlength: [50, 'Last name cannot be more than 50 characters']
+    maxlength: [50, 'Last name cannot be more than 50 characters'],
+    default: null
   },
   email: {
     type: String,
@@ -27,9 +27,9 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long'],
-    select: false // Don't include password in queries by default
+    select: false, // Don't include password in queries by default
+    default: null
   },
   role: {
     type: String,
@@ -43,7 +43,26 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: null
-  }
+  },
+  profileImage: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: [250, 'Bio cannot be more than 250 characters'],
+    default: null
+  },
+  favAuthors: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Author'
+  }],
+  favGenres: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Genre'
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

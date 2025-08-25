@@ -3,6 +3,8 @@ const OTP = require('../models/otpModel');
 const { generateToken, generateRefreshToken, verifyToken } = require('../middleware/auth');
 const emailService = require('./emailService');
 const logger = require('../utils/logger');
+const ApiError = require('../utils/ApiError');
+const { uploadProfileImageS3, deleteFromS3 } = require('./fileUploadService');
 
 /**
  * Register a new user
@@ -96,10 +98,13 @@ const login = async (email, password) => {
  */
 const getProfile = async (userId) => {
   try {
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId)
+      .select('-password')
+      .populate('favAuthors', 'authorName penName')
+      .populate('favGenres', 'title');
 
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     return user.getPublicProfile();
@@ -141,17 +146,32 @@ const getRefreshToken = async (reqrefreshToken) => {
  */
 const updateProfile = async (userId, updateData) => {
   try {
-    // Remove sensitive fields that shouldn't be updated directly
-    const { password, role, isActive, ...safeUpdateData } = updateData;
+    const allowedUpdates = [
+      'firstName',
+      'lastName',
+      'bio',
+      'favAuthors',
+      'favGenres'
+    ];
+    const safeUpdateData = {};
+
+    Object.keys(updateData).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        safeUpdateData[key] = updateData[key];
+      }
+    });
 
     const user = await User.findByIdAndUpdate(
       userId,
       { $set: safeUpdateData },
       { new: true, runValidators: true }
-    ).select('-password');
+    )
+      .select('-password')
+      .populate('favAuthors', 'authorName penName')
+      .populate('favGenres', 'title');
 
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     logger.info(`User profile updated: ${user.email}`);
@@ -159,6 +179,49 @@ const updateProfile = async (userId, updateData) => {
     return user.getPublicProfile();
   } catch (error) {
     logger.error('Update profile error:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Update user profile image
+ * @param {string} userId - User ID
+ * @param {Object} file - The file object from multer
+ * @returns {Object} Updated user profile
+ */
+const updateProfileImage = async (userId, file) => {
+  try {
+    if (!file) {
+      throw new ApiError(400, 'No image file provided.');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // Store the old image URL to delete it after the new one is uploaded
+    const oldImageUrl = user.profileImage;
+
+    // Upload new image to S3
+    const folder = `profile-images/${userId}`;
+    const imageUrl = await uploadProfileImageS3(file, folder);
+
+    // Update user's profileImage field
+    user.profileImage = imageUrl;
+    await user.save();
+
+    logger.info(`Profile image updated for user: ${user.email}`);
+
+    // If user already had a profile image, delete the old one from S3
+    if (oldImageUrl) {
+      await deleteFromS3(oldImageUrl);
+    }
+    return {
+      profileImage: imageUrl,
+    }
+  } catch (error) {
+    logger.error('Update profile image error:', error.message);
     throw error;
   }
 };
@@ -315,11 +378,11 @@ const sendLoginOTP = async (email) => {
     // Check if user exists
     const user = await User.findByEmail(email);
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     if (!user.isActive) {
-      throw new Error('Account is deactivated');
+      throw new ApiError(400, 'Account is deactivated');
     }
 
     // Generate OTP
@@ -362,7 +425,7 @@ const verifyLoginOTP = async (email, otp) => {
     // Find valid OTP
     const otpRecord = await OTP.findValidOTP(email, otp, 'login');
     if (!otpRecord) {
-      throw new Error('Invalid or expired OTP');
+      throw new ApiError(400, 'Invalid or expired OTP');
     }
 
     // Delete the OTP record after successful verification
@@ -372,11 +435,11 @@ const verifyLoginOTP = async (email, otp) => {
     // Get user
     const user = await User.findByEmail(email);
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     if (!user.isActive) {
-      throw new Error('Account is deactivated');
+      throw new ApiError(400, 'Account is deactivated');
     }
 
     // Update last login
@@ -413,7 +476,7 @@ const sendRegistrationOTP = async (email) => {
     // Check if email already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
-      throw new Error('Email already registered');
+      throw new ApiError(409, 'Email already exists');
     }
 
     // Generate OTP
@@ -456,7 +519,12 @@ const registerWithOTP = async (userData, otp) => {
     // Verify OTP
     const otpRecord = await OTP.findValidOTP(userData.email, otp, 'registration');
     if (!otpRecord) {
-      throw new Error('Invalid or expired OTP');
+      throw new ApiError(400, 'Invalid or expired OTP');
+    }
+
+    const existingUser = await User.findByEmail(userData.email);
+    if (existingUser) {
+      throw new ApiError(409, 'User already exists');
     }
 
     // Delete the OTP record after successful verification
@@ -468,7 +536,7 @@ const registerWithOTP = async (userData, otp) => {
     await user.save();
 
     // Send welcome email
-    await emailService.sendWelcomeEmail(user.email, user.firstName);
+    // await emailService.sendWelcomeEmail(user.email, user.firstName);
 
     // Generate token
     const token = generateToken(user);
@@ -490,6 +558,35 @@ const registerWithOTP = async (userData, otp) => {
   }
 };
 
+/**
+ * Delete a user's own account
+ * @param {string} userId - User ID
+ * @returns {boolean} Success status
+ */
+const deleteAccount = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // Prevent admin accounts from being deleted via this endpoint
+    if (user.role === 'admin') {
+      throw new ApiError(403, 'Admin accounts cannot be deleted.');
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    logger.info(`User account deleted: ${user.email}`);
+
+    return true;
+  } catch (error) {
+    logger.error('Delete account error:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -503,5 +600,7 @@ module.exports = {
   getUserById,
   deleteUser,
   changePassword,
-  getRefreshToken
+  getRefreshToken,
+  deleteAccount,
+  updateProfileImage
 }; 

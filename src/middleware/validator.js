@@ -1,4 +1,6 @@
 const { validationResult, body, param, query } = require('express-validator');
+const mongoose = require('mongoose');
+const ApiError = require('../utils/ApiError');
 
 /**
  * Middleware to handle validation errors
@@ -100,24 +102,11 @@ const validateOTPVerification = [
  * Validate registration with OTP data
  */
 const validateRegistrationWithOTP = [
-  body('firstName')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters'),
-  
-  body('lastName')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters'),
   
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long'),
   
   body('otp')
     .isLength({ min: 6, max: 6 })
@@ -132,24 +121,56 @@ const validateRegistrationWithOTP = [
  * Validate user update data
  */
 const validateUserUpdate = [
+  // Check that at least one field is being updated
+  body().custom((value, { req }) => {
+    const allowedFields = ['firstName', 'lastName', 'bio', 'favAuthors', 'favGenres'];
+    const bodyKeys = Object.keys(req.body);
+    if (bodyKeys.length === 0 || !bodyKeys.some(key => allowedFields.includes(key))) {
+      throw new ApiError(400, 'At least one valid field is required for update');
+    }
+    return true;
+  }),
+
   body('firstName')
     .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('First name must be between 2 and 50 characters'),
-  
+
   body('lastName')
     .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters'),
-  
-  body('email')
+
+  body('bio')
     .optional()
-    .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
-  
+    .trim()
+    .isLength({ max: 250 })
+    .withMessage('Bio cannot be more than 250 characters'),
+
+  body('favAuthors')
+    .optional()
+    .isArray()
+    .withMessage('Favorite authors must be an array')
+    .custom((value) => {
+      if (!value.every(mongoose.Types.ObjectId.isValid)) {
+        throw new Error('Invalid author ID in favorite authors');
+      }
+      return true;
+    }),
+
+  body('favGenres')
+    .optional()
+    .isArray()
+    .withMessage('Favorite genres must be an array')
+    .custom((value) => {
+      if (!value.every(mongoose.Types.ObjectId.isValid)) {
+        throw new Error('Invalid genre ID in favorite genres');
+      }
+      return true;
+    }),
+
   handleValidationErrors
 ];
 

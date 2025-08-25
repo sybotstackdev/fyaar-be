@@ -2,6 +2,8 @@ const UserService = require('../services/userService');
 const ApiResponse = require('../utils/response');
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const multer = require('multer');
+const ApiError = require('../utils/ApiError');
 
 /**
  * Register a new user
@@ -70,16 +72,13 @@ const sendRegistrationOTP = asyncHandler(async (req, res) => {
 
 /**
  * Register with OTP
- * POST /api/auth/register-otp
+ * POST /api/auth/register
  */
 const registerWithOTP = asyncHandler(async (req, res) => {
-  const { firstName, lastName, email, password, otp } = req.body;
+  const { email, otp } = req.body;
 
   const result = await UserService.registerWithOTP({
-    firstName,
-    lastName,
     email,
-    password
   }, otp);
 
   return ApiResponse.created(res, 'User registered successfully', result);
@@ -177,12 +176,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 /**
- * Logout (client-side token removal)
  * POST /api/auth/logout
  */
 const logout = asyncHandler(async (req, res) => {
-  // In a stateless JWT setup, logout is handled client-side
-  // You could implement a blacklist here if needed
   logger.info(`User logged out: ${req.user.email}`);
 
   return ApiResponse.success(res, 200, 'Logged out successfully');
@@ -195,7 +191,27 @@ const logout = asyncHandler(async (req, res) => {
 const refreshToken = asyncHandler(async (req, res) => {
   const user = await UserService.getRefreshToken(req.body.refreshToken);
 
-  return ApiResponse.success(res, 200, 'Token refreshed successfully',  user);
+  return ApiResponse.success(res, 200, 'Token refreshed successfully', user);
+});
+
+/**
+ * Delete a user's own account
+ * DELETE /api/auth/profile
+ */
+const deleteAccount = asyncHandler(async (req, res) => {
+  await UserService.deleteAccount(req.user._id);
+
+  return ApiResponse.success(res, 200, 'Your account has been deleted successfully');
+});
+
+/**
+ * Update user profile image
+ * PUT /api/auth/profile/image
+ */
+const updateProfileImage = asyncHandler(async (req, res) => {
+  const updatedUser = await UserService.updateProfileImage(req.user._id, req.file);
+
+  return ApiResponse.success(res, 200, 'Profile image updated successfully', updatedUser);
 });
 
 module.exports = {
@@ -214,5 +230,7 @@ module.exports = {
   changePassword,
   getCurrentUser,
   logout,
-  refreshToken
+  refreshToken,
+  deleteAccount,
+  updateProfileImage
 }; 

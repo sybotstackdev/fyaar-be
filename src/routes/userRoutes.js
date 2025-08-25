@@ -1,7 +1,5 @@
 const express = require('express');
 const {
-  register,
-  login,
   sendLoginOTP,
   loginWithOTP,
   sendRegistrationOTP,
@@ -15,13 +13,14 @@ const {
   changePassword,
   getCurrentUser,
   logout,
-  refreshToken
+  refreshToken,
+  deleteAccount,
+  updateProfileImage
 } = require('../controllers/userController');
 const { authenticate, authorize } = require('../middleware/auth');
-const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
+const { authLimiter } = require('../middleware/rateLimiter');
+const upload = require('../middleware/upload');
 const {
-  validateRegistration,
-  validateLogin,
   validateSendOTP,
   validateOTPVerification,
   validateRegistrationWithOTP,
@@ -30,86 +29,71 @@ const {
   validatePagination
 } = require('../middleware/validator');
 
-const router = express.Router();
-
 // Authentication routes
 const authRoutes = express.Router();
 
-// Register new user
-authRoutes.post('/register', 
-  authLimiter,
-  validateRegistration,
-  register
-);
-
-// Login user
-authRoutes.post('/login', 
-  authLimiter,
-  validateLogin,
-  login
-);
-
 // Send login OTP
-authRoutes.post('/send-login-otp', 
+authRoutes.post('/send-login-otp',
   authLimiter,
   validateSendOTP,
   sendLoginOTP
 );
 
 // Login with OTP
-authRoutes.post('/login-otp', 
+authRoutes.post('/login-otp',
   authLimiter,
   validateOTPVerification,
   loginWithOTP
 );
 
 // Send registration OTP
-authRoutes.post('/send-registration-otp', 
+authRoutes.post('/register',
   authLimiter,
   validateSendOTP,
   sendRegistrationOTP
 );
 
 // Register with OTP
-authRoutes.post('/register-otp', 
+authRoutes.post('/register/verify',
   authLimiter,
   validateRegistrationWithOTP,
   registerWithOTP
 );
 
 // Get current user profile
-authRoutes.get('/me', 
+authRoutes.get('/me',
   authenticate,
   getCurrentUser
 );
 
-// Get user profile
-authRoutes.get('/profile', 
-  authenticate,
-  getProfile
-);
-
 // Update user profile
-authRoutes.put('/profile', 
+authRoutes.put('/profile',
   authenticate,
   validateUserUpdate,
   updateProfile
 );
 
-// Change password
-authRoutes.post('/change-password', 
+// Update profile image
+authRoutes.put('/profile/image',
   authenticate,
-  changePassword
+  upload.single('profileImage'), // 'profileImage' is the field name for the file
+  updateProfileImage
+);
+
+// Delete user account
+authRoutes.delete('/profile',
+  authenticate,
+  deleteAccount
 );
 
 // Logout
-authRoutes.post('/logout', 
+authRoutes.post('/logout',
   authenticate,
   logout
 );
 
 // Refresh token
-authRoutes.post('/refresh', 
+authRoutes.post('/refresh',
   refreshToken
 );
 
@@ -117,7 +101,7 @@ authRoutes.post('/refresh',
 const userRoutes = express.Router();
 
 // Get all users
-userRoutes.get('/', 
+userRoutes.get('/',
   authenticate,
   authorize('admin'),
   validatePagination,
@@ -125,7 +109,7 @@ userRoutes.get('/',
 );
 
 // Get user by ID
-userRoutes.get('/:id', 
+userRoutes.get('/:id',
   authenticate,
   authorize('admin'),
   validateObjectId,
@@ -133,7 +117,7 @@ userRoutes.get('/:id',
 );
 
 // Update user by ID
-userRoutes.put('/:id', 
+userRoutes.put('/:id',
   authenticate,
   authorize('admin'),
   validateObjectId,
@@ -142,7 +126,7 @@ userRoutes.put('/:id',
 );
 
 // Delete user by ID
-userRoutes.delete('/:id', 
+userRoutes.delete('/:id',
   authenticate,
   authorize('admin'),
   validateObjectId,
