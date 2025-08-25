@@ -302,7 +302,7 @@ const getUserById = async (userId) => {
     const user = await User.findById(userId).select('-password');
 
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     return user.getPublicProfile();
@@ -322,7 +322,7 @@ const deleteUser = async (userId) => {
     const user = await User.findByIdAndDelete(userId);
 
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     logger.info(`User deleted: ${user.email}`);
@@ -346,13 +346,13 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     const user = await User.findById(userId).select('+password');
 
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiError(404, 'User not found');
     }
 
     // Verify current password
     const isCurrentPasswordValid = await user.comparePassword(currentPassword);
     if (!isCurrentPasswordValid) {
-      throw new Error('Current password is incorrect');
+      throw new ApiError(400, 'Current password is incorrect');
     }
 
     // Update password
