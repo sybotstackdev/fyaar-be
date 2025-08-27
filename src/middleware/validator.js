@@ -185,7 +185,8 @@ const validateGenre = [
   
   body('description')
     .trim()
-    .withMessage('Genre description is required'),
+    .isLength({ min: 10, max: 5000 })
+    .withMessage('Genre description must be between 10 and 5000 characters'),
   
   handleValidationErrors
 ];

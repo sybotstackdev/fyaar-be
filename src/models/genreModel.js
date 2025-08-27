@@ -12,7 +12,7 @@ const genreSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Genre description is required'],
     trim: true,
-    maxlength: [1000, 'Genre description cannot be more than 1000 characters']
+    maxlength: [5000, 'Genre description cannot be more than 5000 characters']
   },
   isActive: {
     type: Boolean,
