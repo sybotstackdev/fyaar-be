@@ -68,12 +68,35 @@ const getAllCategories = async (options = {}) => {
             query.name = { $regex: search, $options: 'i' };
         }
 
-        const categories = await Category.find(query)
-            .sort({ [sort]: order === 'desc' ? -1 : 1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .populate('tags', 'name')
-            .populate('genres', 'title');
+        const categoriesResult = await Category.aggregate([
+            { $match: query },
+            { $sort: { [sort]: order === 'desc' ? -1 : 1 } },
+            { $skip: (page - 1) * limit },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: 'categorybooks',
+                    localField: '_id',
+                    foreignField: 'category',
+                    as: 'categoryBooks'
+                }
+            },
+            {
+                $addFields: {
+                    bookCount: { $size: '$categoryBooks' }
+                }
+            },
+            {
+                $project: {
+                    categoryBooks: 0
+                }
+            }
+        ]);
+
+        const categories = await Category.populate(categoriesResult, [
+            { path: 'tags', select: 'name' },
+            { path: 'genres', select: 'title' }
+        ]);
 
         const total = await Category.countDocuments(query);
         const totalPages = Math.ceil(total / limit);

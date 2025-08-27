@@ -21,11 +21,13 @@ const createCategory = asyncHandler(async (req, res) => {
  * @access Admin
  */
 const getAllCategories = asyncHandler(async (req, res) => {
+    const { page, limit, sort, order, search } = req.query;
     const options = {
-        page: parseInt(req.query.page, 10) || 1,
-        limit: parseInt(req.query.limit, 10) || 10,
-        sortBy: req.query.sortBy,
-        order: req.query.order
+        page: parseInt(page, 10) || 1,
+        limit: parseInt(limit, 10) || 10,
+        sort: sort,
+        order: order,
+        search: search
     };
     const result = await CategoryService.getAllCategories(options);
     return ApiResponse.success(res, 200, 'Categories retrieved successfully', result);

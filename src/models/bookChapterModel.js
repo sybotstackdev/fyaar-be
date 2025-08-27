@@ -29,7 +29,11 @@ const bookChapterSchema = new mongoose.Schema({
         type: Date,
         default: null
     }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
 
 bookChapterSchema.index({ book: 1, order: 1 }, { unique: true, partialFilterExpression: { order: { $exists: true } } });
 bookChapterSchema.index({ deletedAt: 1 });
