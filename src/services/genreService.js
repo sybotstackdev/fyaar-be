@@ -95,11 +95,12 @@ const getAllGenres = async (options = {}) => {
 /**
  * Get genre by ID
  * @param {string} genreId - Genre ID
- * @returns {Object} Genre profile
+ * @returns {Object} Genre
  */
 const getGenreById = async (genreId) => {
   try {
-    const genre = await Genre.findById(genreId);
+    // Add .populate('variants') to fetch the related variants
+    const genre = await Genre.findById(genreId).populate('variants');
     
     if (!genre) {
       throw new ApiError(404, 'Genre not found');

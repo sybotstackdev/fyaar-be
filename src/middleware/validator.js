@@ -314,6 +314,23 @@ const validateAuthor = [
 ];
 
 /**
+ * Validate genre variant creation/update data
+ */
+const validateGenreVariant = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 5000 })
+    .withMessage('Genre variant name must be between 2 and 5000 characters'),
+
+  body('description')
+    .trim()
+    .isLength({ min: 5 })
+    .withMessage('Description must be at least 5 characters'),
+
+  handleValidationErrors
+];
+
+/**
  * Validate instruction creation/update data
  */
 const validateInstruction = [
@@ -451,6 +468,7 @@ module.exports = {
   validateTag,
   validateLocation,
   validateAuthor,
+  validateGenreVariant,
   validateInstruction,
   validatePlot,
   validateChapter,

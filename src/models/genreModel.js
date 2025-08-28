@@ -35,6 +35,13 @@ genreSchema.index({ title: 1 });
 genreSchema.index({ slug: 1 });
 genreSchema.index({ isActive: 1 });
 
+// Virtual populate for genre descriptions
+genreSchema.virtual('variants', {
+  ref: 'GenreVariant',
+  localField: '_id',
+  foreignField: 'genre'
+});
+
 // Pre-save middleware to generate slug
 genreSchema.pre('save', function(next) {
   if (!this.isModified('title')) return next();

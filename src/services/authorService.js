@@ -103,11 +103,11 @@ const getAllAuthors = async (options = {}) => {
 /**
  * Get author by ID
  * @param {string} authorId - Author ID
- * @returns {Object} Author data
+ * @returns {Object} Author
  */
 const getAuthorById = async (authorId) => {
   try {
-    const author = await Author.findById(authorId);
+    const author = await Author.findById(authorId).populate('descriptions');
 
     if (!author) {
       throw new Error('Author not found');
