@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const spiceMoodSchema = new mongoose.Schema({
+const spiceLevelSchema = new mongoose.Schema({
   comboName: {
     type: String,
     required: [true, 'Combo name is required'],
@@ -8,14 +8,14 @@ const spiceMoodSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Combo name cannot be more than 100 characters']
   },
-  moodSpiceBlend: {
+  spiceBlend: {
     type: [String],
-    required: [true, 'Mood + Spice Blend is required'],
+    required: [true, 'Spice Blend is required'],
     validate: {
       validator: function(v) {
         return v && v.length > 0;
       },
-      message: 'At least one mood + spice blend item is required'
+      message: 'At least one spice blend item is required'
     }
   },
   intensity: {
@@ -29,8 +29,7 @@ const spiceMoodSchema = new mongoose.Schema({
   description: {
     type: String,
     required: [true, 'Description is required'],
-    trim: true,
-    maxlength: [1000, 'Description cannot be more than 1000 characters']
+    trim: true
   },
   isActive: {
     type: Boolean,
@@ -49,13 +48,13 @@ const spiceMoodSchema = new mongoose.Schema({
 });
 
 // Index for better query performance
-spiceMoodSchema.index({ comboName: 1 });
-spiceMoodSchema.index({ slug: 1 });
-spiceMoodSchema.index({ isActive: 1 });
-spiceMoodSchema.index({ intensity: 1 });
+spiceLevelSchema.index({ comboName: 1 });
+spiceLevelSchema.index({ slug: 1 });
+spiceLevelSchema.index({ isActive: 1 });
+spiceLevelSchema.index({ intensity: 1 });
 
 // Pre-save middleware to generate slug
-spiceMoodSchema.pre('save', function(next) {
+spiceLevelSchema.pre('save', function(next) {
   if (!this.isModified('comboName')) return next();
   
   // Generate slug from combo name
@@ -67,16 +66,16 @@ spiceMoodSchema.pre('save', function(next) {
   next();
 });
 
-// Static method to find spice mood by slug
-spiceMoodSchema.statics.findBySlug = function(slug) {
+// Static method to find spice level by slug
+spiceLevelSchema.statics.findBySlug = function(slug) {
   return this.findOne({ slug: slug.toLowerCase() });
 };
 
 // Instance method to get public profile
-spiceMoodSchema.methods.getPublicProfile = function() {
-  const spiceMoodObject = this.toObject();
-  delete spiceMoodObject.__v;
-  return spiceMoodObject;
+spiceLevelSchema.methods.getPublicProfile = function() {
+  const spiceLevelObject = this.toObject();
+  delete spiceLevelObject.__v;
+  return spiceLevelObject;
 };
 
-module.exports = mongoose.model('SpiceMood', spiceMoodSchema); 
+module.exports = mongoose.model('SpiceLevel', spiceLevelSchema);

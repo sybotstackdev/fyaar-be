@@ -1,18 +1,17 @@
 const express = require('express');
 const {
-  createSpiceMood,
-  getAllSpiceMoods,
-  getSpiceMoodById,
-  getSpiceMoodBySlug,
-  updateSpiceMood,
-  deleteSpiceMood,
-  toggleSpiceMoodStatus
-} = require('../controllers/spiceMoodController');
+  createSpiceLevel,
+  getAllSpiceLevels,
+  getSpiceLevelById,
+  getSpiceLevelBySlug,
+  updateSpiceLevel,
+  deleteSpiceLevel,
+  toggleSpiceLevelStatus
+} = require('../controllers/spiceLevelController');
 const { authenticate, authorize } = require('../middleware/auth');
-const { apiLimiter } = require('../middleware/rateLimiter');
 
 const {
-  validateSpiceMood,
+  validateSpiceLevel,
   validateObjectId,
   validatePagination
 } = require('../middleware/validator');
@@ -20,46 +19,46 @@ const {
 const router = express.Router();
 
 // Public route
-router.get('/slug/:slug', getSpiceMoodBySlug);
+router.get('/slug/:slug', getSpiceLevelBySlug);
 
 // Admin-only routes
 router.post('/', 
   authenticate,
   authorize('admin'),
-  validateSpiceMood,
-  createSpiceMood
+  validateSpiceLevel,
+  createSpiceLevel
 );
 
 router.get('/', 
   authenticate,
   validatePagination,
-  getAllSpiceMoods
+  getAllSpiceLevels
 );
 
 router.get('/:id', 
   authenticate,
   validateObjectId,
-  getSpiceMoodById
+  getSpiceLevelById
 );
 
 router.put('/:id', 
   authenticate,
   authorize('admin'),
   validateObjectId,
-  validateSpiceMood,
-  updateSpiceMood
+  validateSpiceLevel,
+  updateSpiceLevel
 );
 
 router.delete('/:id', 
   authenticate,
   validateObjectId,
-  deleteSpiceMood
+  deleteSpiceLevel
 );
 
 router.patch('/:id/toggle', 
   authenticate,
   validateObjectId,
-  toggleSpiceMoodStatus
+  toggleSpiceLevelStatus
 );
 
 module.exports = router; 

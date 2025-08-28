@@ -61,11 +61,6 @@ const getAllBooks = async (options = {}) => {
             .populate('authors', 'authorName')
             .populate('tags', 'name')
             .populate('genres', 'title');
-        // .populate('spiceMoods', 'title')
-        // .populate('locations', 'title')
-        // .populate('plots', 'title')
-        // .populate('narrative', 'title')
-        // .populate('endings', 'title');
 
         const total = await Book.countDocuments(query);
         const totalPages = Math.ceil(total / limit);
@@ -85,7 +80,7 @@ const getBookById = async (bookId) => {
         const book = await Book.findOne({ _id: bookId })
             .populate('authors')
             .populate('tags')
-            .populate('spiceMoods')
+            .populate('spiceLevels')
             .populate('locations')
             .populate('plots')
             .populate('narrative')
@@ -107,7 +102,7 @@ const updateBook = async (bookId, updateData) => {
         await book.populate([
             { path: 'authors' },
             { path: 'tags' },
-            { path: 'spiceMoods' },
+            { path: 'spiceLevels' },
             { path: 'locations' },
             { path: 'plots' },
             { path: 'narrative' },

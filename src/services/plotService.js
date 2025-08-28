@@ -73,6 +73,10 @@ const getAllPlots = async (options = {}) => {
 
     // Execute query
     const plots = await Plot.find(query)
+      .populate('genre', 'title')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(parseInt(limit));
 
     // Get total count
     const total = await Plot.countDocuments(query);

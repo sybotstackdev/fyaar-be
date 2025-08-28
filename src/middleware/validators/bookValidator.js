@@ -60,7 +60,7 @@ const validateUpdateBook = [
     body('tags').optional().isArray({ min: 1 }).withMessage('At least one tag is required.'),
     body('genre').optional().trim().notEmpty().withMessage('Genre is required.'),
     body('plot').optional().trim().notEmpty().withMessage('Plot is required.'),
-    body('spiceMood').optional().trim().notEmpty().withMessage('Spice & Mood is required.'),
+    body('spiceLevel').optional().trim().notEmpty().withMessage('Spice Level is required.'),
     body('ending').optional().trim().notEmpty().withMessage('Ending is required.'),
     body('bookCover').optional().trim().notEmpty().withMessage('Book cover is required.'),
     body('status').optional().isIn(['draft', 'published', 'unpublished']).withMessage('Invalid status.'),

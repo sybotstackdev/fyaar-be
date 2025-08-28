@@ -11,8 +11,7 @@ const narrativeSchema = new mongoose.Schema({
   description: {
     type: String,
     required: [true, 'Description is required'],
-    trim: true,
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    trim: true
   },
   isActive: {
     type: Boolean,

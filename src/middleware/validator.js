@@ -194,20 +194,20 @@ const validateGenre = [
 /**
  * Validate spice mood creation/update data
  */
-const validateSpiceMood = [
+const validateSpiceLevel = [
   body('comboName')
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Combo name must be between 2 and 100 characters'),
   
-  body('moodSpiceBlend')
+  body('spiceBlend')
     .isArray({ min: 1 })
-    .withMessage('Mood + Spice Blend must be an array with at least one item'),
+    .withMessage('Spice Blend must be an array with at least one item'),
   
-  body('moodSpiceBlend.*')
+  body('spiceBlend.*')
     .trim()
     .isLength({ min: 1, max: 200 })
-    .withMessage('Each mood + spice blend item must be between 1 and 200 characters'),
+    .withMessage('Each spice blend item must be between 1 and 200 characters'),
   
   body('intensity')
     .isIn(['Low', 'Low–Med', 'Medium', 'High', 'Very High'])
@@ -215,8 +215,8 @@ const validateSpiceMood = [
   
   body('description')
     .trim()
-    .isLength({ min: 10, max: 1000 })
-    .withMessage('Description must be between 10 and 1000 characters'),
+    .isLength({ min: 10 })
+    .withMessage('Description must be at least 10 characters'),
   
   handleValidationErrors
 ];
@@ -232,8 +232,8 @@ const validateNarrative = [
   
   body('description')
     .trim()
-    .isLength({ min: 10, max: 500 })
-    .withMessage('Description must be between 10 and 500 characters'),
+    .isLength({ min: 10 })
+    .withMessage('Description must be at least 10 characters'),
   
   handleValidationErrors
 ];
@@ -458,7 +458,7 @@ module.exports = {
   validateRegistrationWithOTP,
   validateUserUpdate,
   validateGenre,
-  validateSpiceMood,
+  validateSpiceLevel,
   validateNarrative,
   validateEnding,
   validateTag,

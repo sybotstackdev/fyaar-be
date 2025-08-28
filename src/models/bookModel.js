@@ -31,7 +31,7 @@ const bookSchema = new mongoose.Schema({
     plots: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Plot' }],
     narrative: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Narrative' }],
     endings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Ending' }],
-    spiceMoods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SpiceMood' }],
+    spiceLevels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SpiceLevel' }],
     locations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Location' }],
     status: {
         type: String,
@@ -70,7 +70,7 @@ bookSchema.index({ slug: 1 });
 bookSchema.index({ authors: 1 });
 bookSchema.index({ tags: 1 });
 bookSchema.index({ genres: 1 });
-bookSchema.index({ spiceMoods: 1 });
+bookSchema.index({ spiceLevels: 1 });
 bookSchema.index({ locations: 1 });
 bookSchema.index({ plots: 1 });
 bookSchema.index({ narrative: 1 });

@@ -1,7 +1,7 @@
 const express = require('express');
 const userRoutes = require('./userRoutes');
 const genreRoutes = require('./genreRoutes');
-const spiceMoodRoutes = require('./spiceMoodRoutes');
+const spiceLevelRoutes = require('./spiceLevelRoutes');
 const narrativeRoutes = require('./narrativeRoutes');
 const locationRoutes = require('./locationRoutes');
 const authorRoutes = require('./authorRoutes');
@@ -31,7 +31,7 @@ router.get('/health', (req, res) => {
 router.use('/auth', userRoutes.authRoutes);
 router.use('/users', userRoutes.userRoutes);
 router.use('/genres', genreRoutes);
-router.use('/spice-moods', spiceMoodRoutes);
+router.use('/spice-levels', spiceLevelRoutes);
 router.use('/narratives', narrativeRoutes);
 router.use('/endings', endingRoutes);
 router.use('/tags', tagRoutes);
