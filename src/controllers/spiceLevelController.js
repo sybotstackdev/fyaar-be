@@ -8,12 +8,10 @@ const logger = require('../utils/logger');
  * POST /api/spice-levels
  */
 const createSpiceLevel = asyncHandler(async (req, res) => {
-  const { comboName, spiceBlend, intensity, description } = req.body;
+  const { comboName, description } = req.body;
 
   const spiceLevel = await SpiceLevelService.createSpiceLevel({
     comboName,
-    spiceBlend,
-    intensity,
     description
   });
 
@@ -25,7 +23,7 @@ const createSpiceLevel = asyncHandler(async (req, res) => {
  * GET /api/spice-levels
  */
 const getAllSpiceLevels = asyncHandler(async (req, res) => {
-  const { page, limit, sort, order, search, isActive, intensity } = req.query;
+  const { page, limit, sort, order, search, isActive } = req.query;
 
   const result = await SpiceLevelService.getAllSpiceLevels({
     page: parseInt(page) || 1,
@@ -34,7 +32,6 @@ const getAllSpiceLevels = asyncHandler(async (req, res) => {
     order: order || 'desc',
     search: search || '',
     isActive: isActive || '',
-    intensity: intensity || ''
   });
 
   return ApiResponse.success(res, 200, 'Spice level settings retrieved successfully', result);

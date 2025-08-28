@@ -8,12 +8,11 @@ const logger = require('../utils/logger');
  * POST /api/genres
  */
 const createGenre = asyncHandler(async (req, res) => {
-  const { title, description, descriptionVariant, isActive = true } = req.body;
+  const { title, description, isActive = true } = req.body;
 
   const genre = await GenreService.createGenre({
     title,
     description,
-    descriptionVariant,
     isActive
   });
 

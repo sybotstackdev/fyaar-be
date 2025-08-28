@@ -8,24 +8,6 @@ const spiceLevelSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Combo name cannot be more than 100 characters']
   },
-  spiceBlend: {
-    type: [String],
-    required: [true, 'Spice Blend is required'],
-    validate: {
-      validator: function(v) {
-        return v && v.length > 0;
-      },
-      message: 'At least one spice blend item is required'
-    }
-  },
-  intensity: {
-    type: String,
-    required: [true, 'Intensity is required'],
-    enum: {
-      values: ['Low', 'Low–Med', 'Medium', 'High', 'Very High'],
-      message: 'Intensity must be one of: Low, Low–Med, Medium, High, Very High'
-    }
-  },
   description: {
     type: String,
     required: [true, 'Description is required'],
@@ -51,7 +33,6 @@ const spiceLevelSchema = new mongoose.Schema({
 spiceLevelSchema.index({ comboName: 1 });
 spiceLevelSchema.index({ slug: 1 });
 spiceLevelSchema.index({ isActive: 1 });
-spiceLevelSchema.index({ intensity: 1 });
 
 // Pre-save middleware to generate slug
 spiceLevelSchema.pre('save', function(next) {

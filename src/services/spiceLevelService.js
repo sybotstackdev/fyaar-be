@@ -1,4 +1,5 @@
 const SpiceLevel = require('../models/spiceLevelModel');
+const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
 
 /**
@@ -11,7 +12,7 @@ const createSpiceLevel = async (spiceLevelData) => {
     // Check if spice level with same combo name already exists
     const existingSpiceLevel = await SpiceLevel.findOne({ comboName: spiceLevelData.comboName });
     if (existingSpiceLevel) {
-      throw new Error('Spice level setting with this combo name already exists');
+      throw new ApiError(400, 'Spice level setting with this combo name already exists');
     }
 
     // Create new spice level
@@ -40,27 +41,21 @@ const getAllSpiceLevels = async (options = {}) => {
       sort = 'createdAt',
       order = 'desc',
       search = '',
-      isActive = '',
-      intensity = ''
+      isActive = ''
     } = options;
 
     // Build query
     const query = {};
-    
+
     if (search) {
       query.$or = [
         { comboName: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { spiceBlend: { $in: [new RegExp(search, 'i')] } }
+        { description: { $regex: search, $options: 'i' } }
       ];
     }
 
     if (isActive !== '') {
       query.isActive = isActive === 'true';
-    }
-
-    if (intensity) {
-      query.intensity = intensity;
     }
 
     // Build sort object
@@ -69,7 +64,7 @@ const getAllSpiceLevels = async (options = {}) => {
 
     // Execute query with pagination
     const skip = (page - 1) * limit;
-    
+
     const [spiceLevels, total] = await Promise.all([
       SpiceLevel.find(query)
         .sort(sortObj)
@@ -105,9 +100,9 @@ const getAllSpiceLevels = async (options = {}) => {
 const getSpiceLevelById = async (spiceLevelId) => {
   try {
     const spiceLevel = await SpiceLevel.findById(spiceLevelId);
-    
+
     if (!spiceLevel) {
-      throw new Error('Spice level setting not found');
+      throw new ApiError(404, 'Spice level setting not found');
     }
 
     return spiceLevel.getPublicProfile();
@@ -125,9 +120,9 @@ const getSpiceLevelById = async (spiceLevelId) => {
 const getSpiceLevelBySlug = async (slug) => {
   try {
     const spiceLevel = await SpiceLevel.findBySlug(slug);
-    
+
     if (!spiceLevel) {
-      throw new Error('Spice level setting not found');
+      throw new ApiError(404, 'Spice level setting not found');
     }
 
     return spiceLevel.getPublicProfile();
@@ -147,12 +142,12 @@ const updateSpiceLevel = async (spiceLevelId, updateData) => {
   try {
     // Check if combo name is being updated and if it already exists
     if (updateData.comboName) {
-      const existingSpiceLevel = await SpiceLevel.findOne({ 
-        comboName: updateData.comboName, 
-        _id: { $ne: spiceLevelId } 
+      const existingSpiceLevel = await SpiceLevel.findOne({
+        comboName: updateData.comboName,
+        _id: { $ne: spiceLevelId }
       });
       if (existingSpiceLevel) {
-        throw new Error('Spice level setting with this combo name already exists');
+        throw new ApiError(400, 'Spice level setting with this combo name already exists');
       }
     }
 
@@ -163,7 +158,7 @@ const updateSpiceLevel = async (spiceLevelId, updateData) => {
     );
 
     if (!spiceLevel) {
-      throw new Error('Spice level setting not found');
+      throw new ApiError(404, 'Spice level setting not found');
     }
 
     logger.info(`Spice level setting updated: ${spiceLevel.comboName}`);
@@ -183,9 +178,9 @@ const updateSpiceLevel = async (spiceLevelId, updateData) => {
 const deleteSpiceLevel = async (spiceLevelId) => {
   try {
     const spiceLevel = await SpiceLevel.findByIdAndDelete(spiceLevelId);
-    
+
     if (!spiceLevel) {
-      throw new Error('Spice level setting not found');
+      throw new ApiError(404, 'Spice level setting not found');
     }
 
     logger.info(`Spice level setting deleted: ${spiceLevel.comboName}`);

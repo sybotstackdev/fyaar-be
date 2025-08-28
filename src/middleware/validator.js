@@ -188,23 +188,6 @@ const validateGenre = [
     .isLength({ min: 10, max: 5000 })
     .withMessage('Genre description must be between 10 and 5000 characters'),
 
-  body('descriptionVariant')
-    .optional()
-    .isObject()
-    .withMessage('Description variant must be an object'),
-
-  body('descriptionVariant.name')
-    .optional({ checkFalsy: true })
-    .trim()
-    .isLength({ min: 2 })
-    .withMessage('Variant name must be minimum 2 characters'),
-
-  body('descriptionVariant.description')
-    .optional({ checkFalsy: true })
-    .trim()
-    .isLength({ min: 10 })
-    .withMessage('Variant description must be minimum 10 characters'),
-
   handleValidationErrors
 ];
 
@@ -216,19 +199,6 @@ const validateSpiceLevel = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Combo name must be between 2 and 100 characters'),
-
-  body('spiceBlend')
-    .isArray({ min: 1 })
-    .withMessage('Spice Blend must be an array with at least one item'),
-
-  body('spiceBlend.*')
-    .trim()
-    .isLength({ min: 1, max: 200 })
-    .withMessage('Each spice blend item must be between 1 and 200 characters'),
-
-  body('intensity')
-    .isIn(['Low', 'Low–Med', 'Medium', 'High', 'Very High'])
-    .withMessage('Intensity must be one of: Low, Low–Med, Medium, High, Very High'),
 
   body('description')
     .trim()
