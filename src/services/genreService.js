@@ -1,4 +1,5 @@
 const Genre = require('../models/genreModel');
+const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
 
 /**
@@ -11,7 +12,7 @@ const createGenre = async (genreData) => {
     // Check if genre with same title already exists
     const existingGenre = await Genre.findOne({ title: genreData.title });
     if (existingGenre) {
-      throw new Error('Genre with this title already exists');
+      throw new ApiError(400, 'Genre with this title already exists');
     }
 
     // Create new genre
@@ -101,7 +102,7 @@ const getGenreById = async (genreId) => {
     const genre = await Genre.findById(genreId);
     
     if (!genre) {
-      throw new Error('Genre not found');
+      throw new ApiError(404, 'Genre not found');
     }
 
     return genre.getPublicProfile();
@@ -121,7 +122,7 @@ const getGenreBySlug = async (slug) => {
     const genre = await Genre.findBySlug(slug);
     
     if (!genre) {
-      throw new Error('Genre not found');
+      throw new ApiError(404, 'Genre not found');
     }
 
     return genre.getPublicProfile();
@@ -146,7 +147,7 @@ const updateGenre = async (genreId, updateData) => {
         _id: { $ne: genreId } 
       });
       if (existingGenre) {
-        throw new Error('Genre with this title already exists');
+        throw new ApiError(400, 'Genre with this title already exists');
       }
     }
 
@@ -157,7 +158,7 @@ const updateGenre = async (genreId, updateData) => {
     );
 
     if (!genre) {
-      throw new Error('Genre not found');
+      throw new ApiError(404, 'Genre not found');
     }
 
     logger.info(`Genre updated: ${genre.title}`);
@@ -179,7 +180,7 @@ const deleteGenre = async (genreId) => {
     const genre = await Genre.findByIdAndDelete(genreId);
     
     if (!genre) {
-      throw new Error('Genre not found');
+      throw new ApiError(404, 'Genre not found');
     }
 
     logger.info(`Genre deleted: ${genre.title}`);

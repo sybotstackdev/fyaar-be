@@ -7,14 +7,14 @@ const ApiError = require('../utils/ApiError');
  */
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     const errorMessages = errors.array().map(error => ({
       field: error.path,
       message: error.msg,
       value: error.value
     }));
-    
+
     return res.status(422).json({
       success: false,
       message: 'Validation failed',
@@ -22,7 +22,7 @@ const handleValidationErrors = (req, res, next) => {
       timestamp: new Date().toISOString()
     });
   }
-  
+
   next();
 };
 
@@ -34,21 +34,21 @@ const validateRegistration = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('First name must be between 2 and 50 characters'),
-  
+
   body('lastName')
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters'),
-  
+
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  
+
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
-  
+
   handleValidationErrors
 ];
 
@@ -60,11 +60,11 @@ const validateLogin = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  
+
   body('password')
     .notEmpty()
     .withMessage('Password is required'),
-  
+
   handleValidationErrors
 ];
 
@@ -76,7 +76,7 @@ const validateSendOTP = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  
+
   handleValidationErrors
 ];
 
@@ -88,13 +88,13 @@ const validateOTPVerification = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  
+
   body('otp')
     .isLength({ min: 6, max: 6 })
     .withMessage('OTP must be exactly 6 digits')
     .isNumeric()
     .withMessage('OTP must contain only numbers'),
-  
+
   handleValidationErrors
 ];
 
@@ -102,18 +102,18 @@ const validateOTPVerification = [
  * Validate registration with OTP data
  */
 const validateRegistrationWithOTP = [
-  
+
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  
+
   body('otp')
     .isLength({ min: 6, max: 6 })
     .withMessage('OTP must be exactly 6 digits')
     .isNumeric()
     .withMessage('OTP must contain only numbers'),
-  
+
   handleValidationErrors
 ];
 
@@ -182,12 +182,29 @@ const validateGenre = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Genre title must be between 2 and 100 characters'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 5000 })
     .withMessage('Genre description must be between 10 and 5000 characters'),
-  
+
+  body('descriptionVariant')
+    .optional()
+    .isObject()
+    .withMessage('Description variant must be an object'),
+
+  body('descriptionVariant.name')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Variant name must be minimum 2 characters'),
+
+  body('descriptionVariant.description')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 10 })
+    .withMessage('Variant description must be minimum 10 characters'),
+
   handleValidationErrors
 ];
 
@@ -199,25 +216,25 @@ const validateSpiceLevel = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Combo name must be between 2 and 100 characters'),
-  
+
   body('spiceBlend')
     .isArray({ min: 1 })
     .withMessage('Spice Blend must be an array with at least one item'),
-  
+
   body('spiceBlend.*')
     .trim()
     .isLength({ min: 1, max: 200 })
     .withMessage('Each spice blend item must be between 1 and 200 characters'),
-  
+
   body('intensity')
     .isIn(['Low', 'Low–Med', 'Medium', 'High', 'Very High'])
     .withMessage('Intensity must be one of: Low, Low–Med, Medium, High, Very High'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10 })
     .withMessage('Description must be at least 10 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -229,12 +246,12 @@ const validateNarrative = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Option label must be between 2 and 100 characters'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10 })
     .withMessage('Description must be at least 10 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -246,12 +263,12 @@ const validateEnding = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Option label must be between 2 and 100 characters'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 500 })
     .withMessage('Description must be between 10 and 500 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -263,7 +280,7 @@ const validateTag = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Name must be between 2 and 100 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -275,27 +292,27 @@ const validateLocation = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Location name must be between 2 and 100 characters'),
-  
+
   body('category')
     .isIn(['tier1-cities', 'tier2-cities', 'vacation-travel', 'international', 'speculative-fantasy'])
     .withMessage('Category must be one of: tier1-cities, tier2-cities, vacation-travel, international, speculative-fantasy'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 1000 })
     .withMessage('Location description must be between 10 and 1000 characters'),
-  
+
   body('country')
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Country must be between 2 and 100 characters'),
-  
+
   body('state')
     .optional()
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('State must be between 2 and 100 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -307,22 +324,22 @@ const validateAuthor = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Author name must be between 2 and 100 characters'),
-  
+
   body('writingStyle')
     .trim()
     .isLength({ min: 10, max: 1000 })
     .withMessage('Writing style must be between 10 and 1000 characters'),
-  
+
   body('designStyle')
     .trim()
     .isLength({ min: 10, max: 1000 })
     .withMessage('Design style must be between 10 and 1000 characters'),
-  
+
   body('penName')
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Pen name must be between 2 and 100 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -334,12 +351,12 @@ const validateInstruction = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Instruction name must be between 2 and 100 characters'),
-  
+
   body('instructions')
     .trim()
     .isLength({ min: 10, max: 5000 })
     .withMessage('Instructions must be between 10 and 5000 characters'),
-  
+
   handleValidationErrors
 ];
 
@@ -351,21 +368,21 @@ const validatePlot = [
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage('Plot title must be between 2 and 200 characters'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 5000 })
     .withMessage('Plot description must be between 10 and 5000 characters'),
-  
+
   body('genre')
     .isMongoId()
     .withMessage('Genre must be a valid MongoDB ObjectId'),
-  
+
   body('chapters')
     .optional()
     .isArray()
     .withMessage('Chapters must be an array'),
-  
+
   handleValidationErrors
 ];
 
@@ -377,21 +394,21 @@ const validateChapter = [
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage('Chapter name must be between 2 and 200 characters'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 2000 })
     .withMessage('Chapter description must be between 10 and 2000 characters'),
-  
+
   body('plot')
     .isMongoId()
     .withMessage('Plot must be a valid MongoDB ObjectId'),
-  
+
   body('order')
     .optional()
     .isInt({ min: 1 })
     .withMessage('Chapter order must be a positive integer'),
-  
+
   handleValidationErrors
 ];
 
@@ -403,21 +420,21 @@ const validateVisualPrompt = [
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage('Visual prompt name must be between 2 and 200 characters'),
-  
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 2000 })
     .withMessage('Visual prompt description must be between 10 and 2000 characters'),
-  
+
   body('plot')
     .isMongoId()
     .withMessage('Plot must be a valid MongoDB ObjectId'),
-  
+
   body('order')
     .optional()
     .isInt({ min: 1 })
     .withMessage('Visual prompt order must be a positive integer'),
-  
+
   handleValidationErrors
 ];
 
@@ -428,7 +445,7 @@ const validateObjectId = [
   param('id')
     .isMongoId()
     .withMessage('Invalid ID format'),
-  
+
   handleValidationErrors
 ];
 
@@ -440,12 +457,12 @@ const validatePagination = [
     .optional()
     .isInt({ min: 1 })
     .withMessage('Page must be a positive integer'),
-  
+
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Limit must be between 1 and 100'),
-  
+
   handleValidationErrors
 ];
 
