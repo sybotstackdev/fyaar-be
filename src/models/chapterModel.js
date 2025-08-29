@@ -4,14 +4,12 @@ const chapterSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Chapter name is required'],
-    trim: true,
-    maxlength: [200, 'Chapter name cannot be more than 200 characters']
+    trim: true
   },
   description: {
     type: String,
     required: [true, 'Chapter description is required'],
-    trim: true,
-    maxlength: [2000, 'Chapter description cannot be more than 2000 characters']
+    trim: true
   },
   plot: {
     type: mongoose.Schema.Types.ObjectId,

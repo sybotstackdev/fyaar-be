@@ -13,11 +13,8 @@ const validateNewBook = [
         .notEmpty().withMessage('Description is required.')
         .custom(value => {
             const count = wordCount(value);
-            if (count < 2) {
-                throw new Error('Description must be at least 5 words.');
-            }
-            if (count > 500) {
-                throw new Error('Description cannot exceed 500 words.');
+            if (count < 1) {
+                throw new Error('Description must be at least 1 words.');
             }
             return true;
         }),
@@ -30,8 +27,8 @@ const validateNewBook = [
     body('chapters.*.content').optional().trim().notEmpty().withMessage('Chapter content is required.')
         .custom(value => {
             const count = wordCount(value);
-            if (count < 5) {
-                throw new Error('Chapter content must be at least 5 words.');
+            if (count < 1) {
+                throw new Error('Chapter content must be at least 1 words.');
             }
             if (count > 5000) {
                 throw new Error('Chapter content cannot exceed 5000 words.');
@@ -48,11 +45,8 @@ const validateUpdateBook = [
         .notEmpty().withMessage('Description is required.')
         .custom(value => {
             const count = wordCount(value);
-            if (count < 2) {
-                throw new Error('Description must be at least 2 words.');
-            }
-            if (count > 1000) {
-                throw new Error('Description cannot exceed 1000 words.');
+            if (count < 1) {
+                throw new Error('Description must be at least 1 words.');
             }
             return true;
         }),
@@ -74,8 +68,8 @@ const validateNewChapter = [
         .notEmpty().withMessage('Content is required.')
         .custom(value => {
             const count = wordCount(value);
-            if (count < 5) {
-                throw new Error('Content must be at least 5 words.');
+            if (count < 1) {
+                throw new Error('Content must be at least 1 words.');
             }
             if (count > 5000) {
                 throw new Error('Content cannot exceed 5000 words.');
@@ -95,8 +89,8 @@ const validateUpdateChapter = [
         .notEmpty().withMessage('Content is required.')
         .custom(value => {
             const count = wordCount(value);
-            if (count < 5) {
-                throw new Error('Content must be at least 5 words.');
+            if (count < 1) {
+                throw new Error('Content must be at least 1 words.');
             }
             if (count > 5000) {
                 throw new Error('Content cannot exceed 5000 words.');

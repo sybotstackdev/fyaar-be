@@ -4,14 +4,12 @@ const plotSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Plot title is required'],
-    trim: true,
-    maxlength: [200, 'Plot title cannot be more than 200 characters']
+    trim: true
   },
   description: {
     type: String,
     required: [true, 'Plot description is required'],
     trim: true,
-    maxlength: [5000, 'Plot description cannot be more than 5000 characters']
   },
   genre: {
     type: mongoose.Schema.Types.ObjectId,

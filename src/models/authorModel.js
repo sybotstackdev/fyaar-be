@@ -4,20 +4,17 @@ const authorSchema = new mongoose.Schema({
   authorName: {
     type: String,
     required: [true, 'Author name is required'],
-    trim: true,
-    maxlength: [100, 'Author name cannot be more than 100 characters']
+    trim: true
   },
   writingStyle: {
     type: String,
     required: [true, 'Writing style is required'],
-    trim: true,
-    maxlength: [1000, 'Writing style cannot be more than 1000 characters']
+    trim: true
   },
   designStyle: {
     type: String,
     required: [true, 'Design style is required'],
-    trim: true,
-    maxlength: [1000, 'Design style cannot be more than 1000 characters']
+    trim: true
   },
   genre: {
     type: mongoose.Schema.Types.ObjectId,

@@ -4,14 +4,12 @@ const bookSchema = new mongoose.Schema({
     title: {
         type: String,
         required: [true, 'Book title is required'],
-        trim: true,
-        maxlength: [200, 'Book title cannot be more than 200 characters']
+        trim: true
     },
     description: {
         type: String,
         required: [true, 'Book description is required'],
-        trim: true,
-        maxlength: [5000, 'Book description cannot be more than 5000 characters']
+        trim: true
     },
     authors: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -20,8 +18,7 @@ const bookSchema = new mongoose.Schema({
     }],
     tags: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Tag',
-        required: [true, 'At least one tag is required']
+        ref: 'Tag'
     }],
     bookCover: {
         type: String,

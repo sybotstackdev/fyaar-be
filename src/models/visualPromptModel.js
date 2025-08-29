@@ -4,14 +4,12 @@ const visualPromptSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Visual prompt name is required'],
-    trim: true,
-    maxlength: [200, 'Visual prompt name cannot be more than 200 characters']
+    trim: true
   },
   description: {
     type: String,
     required: [true, 'Visual prompt description is required'],
-    trim: true,
-    maxlength: [2000, 'Visual prompt description cannot be more than 2000 characters']
+    trim: true
   },
   plot: {
     type: mongoose.Schema.Types.ObjectId,

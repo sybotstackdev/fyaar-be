@@ -5,8 +5,7 @@ const tagSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Name is required'],
     unique: true,
-    trim: true,
-    maxlength: [100, 'Name cannot be more than 100 characters']
+    trim: true
   },
   isActive: {
     type: Boolean,

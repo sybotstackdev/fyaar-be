@@ -4,14 +4,12 @@ const instructionSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Instruction name is required'],
-    trim: true,
-    maxlength: [100, 'Instruction name cannot be more than 100 characters']
+    trim: true
   },
   instructions: {
     type: String,
     required: [true, 'Instructions are required'],
     trim: true,
-    maxlength: [5000, 'Instructions cannot be more than 5000 characters']
   },
   isActive: {
     type: Boolean,

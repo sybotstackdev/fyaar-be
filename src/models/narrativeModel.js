@@ -5,8 +5,7 @@ const narrativeSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Option label is required'],
     unique: true,
-    trim: true,
-    maxlength: [100, 'Option label cannot be more than 100 characters']
+    trim: true
   },
   description: {
     type: String,

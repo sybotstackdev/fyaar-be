@@ -5,14 +5,12 @@ const endingSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Option label is required'],
     unique: true,
-    trim: true,
-    maxlength: [100, 'Option label cannot be more than 100 characters']
+    trim: true
   },
   description: {
     type: String,
     required: [true, 'Description is required'],
-    trim: true,
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    trim: true
   },
   isActive: {
     type: Boolean,

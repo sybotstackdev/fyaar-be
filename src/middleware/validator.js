@@ -197,13 +197,13 @@ const validateGenre = [
 const validateSpiceLevel = [
   body('comboName')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Combo name must be between 2 and 100 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Combo name must be at least 2 characters'),
 
   body('description')
     .trim()
-    .isLength({ min: 10 })
-    .withMessage('Description must be at least 10 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Description must be at least 2 characters'),
 
   handleValidationErrors
 ];
@@ -214,13 +214,13 @@ const validateSpiceLevel = [
 const validateNarrative = [
   body('optionLabel')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Option label must be between 2 and 100 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Option label must be at least 2 characters'),
 
   body('description')
     .trim()
-    .isLength({ min: 10 })
-    .withMessage('Description must be at least 10 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Description must be at least 2 characters'),
 
   handleValidationErrors
 ];
@@ -231,13 +231,13 @@ const validateNarrative = [
 const validateEnding = [
   body('optionLabel')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Option label must be between 2 and 100 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Option label must be at least 2 characters'),
 
   body('description')
     .trim()
-    .isLength({ min: 10, max: 500 })
-    .withMessage('Description must be between 10 and 500 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Description must be at least 2 characters'),
 
   handleValidationErrors
 ];
@@ -248,8 +248,8 @@ const validateEnding = [
 const validateTag = [
   body('name')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2 and 100 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Name must be at least 2 characters'),
 
   handleValidationErrors
 ];
@@ -260,7 +260,7 @@ const validateTag = [
 const validateLocation = [
   body('name')
     .trim()
-    .isLength({ min: 2, max: 100 })
+    .isLength({ min: 2 })
     .withMessage('Location name must be between 2 and 100 characters'),
 
   body('category')
@@ -269,8 +269,8 @@ const validateLocation = [
 
   body('description')
     .trim()
-    .isLength({ min: 10, max: 1000 })
-    .withMessage('Location description must be between 10 and 1000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Location description must be at least 2 characters'),
 
   body('country')
     .trim()
@@ -292,18 +292,18 @@ const validateLocation = [
 const validateAuthor = [
   body('authorName')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Author name must be between 2 and 100 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Author name must be at least 2 characters'),
 
   body('writingStyle')
     .trim()
-    .isLength({ min: 10, max: 1000 })
-    .withMessage('Writing style must be between 10 and 1000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Writing style must be at least 2 characters'),
 
   body('designStyle')
     .trim()
-    .isLength({ min: 10, max: 1000 })
-    .withMessage('Design style must be between 10 and 1000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Design style must be at least 2 characters'),
 
   body('genre')
     .isMongoId()
@@ -335,13 +335,13 @@ const validateGenreVariant = [
 const validateInstruction = [
   body('name')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Instruction name must be between 2 and 100 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Instruction name must be at least 2 characters'),
 
   body('instructions')
     .trim()
-    .isLength({ min: 10, max: 5000 })
-    .withMessage('Instructions must be between 10 and 5000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Instructions must be at least 2 characters'),
 
   handleValidationErrors
 ];
@@ -352,13 +352,13 @@ const validateInstruction = [
 const validatePlot = [
   body('title')
     .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage('Plot title must be between 2 and 200 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Plot title must be at least 2 characters'),
 
   body('description')
     .trim()
-    .isLength({ min: 10, max: 5000 })
-    .withMessage('Plot description must be between 10 and 5000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Plot description must be at least 2 characters'),
 
   body('genre')
     .isMongoId()
@@ -378,13 +378,13 @@ const validatePlot = [
 const validateChapter = [
   body('name')
     .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage('Chapter name must be between 2 and 200 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Chapter name must be at least 2 characters'),
 
   body('description')
     .trim()
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('Chapter description must be between 10 and 2000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Chapter description must be at least 2 characters'),
 
   body('plot')
     .isMongoId()
@@ -404,13 +404,13 @@ const validateChapter = [
 const validateVisualPrompt = [
   body('name')
     .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage('Visual prompt name must be between 2 and 200 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Visual prompt name must be at least 2 characters'),
 
   body('description')
     .trim()
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('Visual prompt description must be between 10 and 2000 characters'),
+    .isLength({ min: 2 })
+    .withMessage('Visual prompt description must be at least 2 characters'),
 
   body('plot')
     .isMongoId()

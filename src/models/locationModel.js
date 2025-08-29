@@ -5,8 +5,7 @@ const locationSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Location name is required'],
     unique: true,
-    trim: true,
-    maxlength: [100, 'Location name cannot be more than 100 characters']
+    trim: true
   },
   category: {
     type: String,
@@ -19,8 +18,7 @@ const locationSchema = new mongoose.Schema({
   description: {
     type: String,
     required: [true, 'Location description is required'],
-    trim: true,
-    maxlength: [1000, 'Location description cannot be more than 1000 characters']
+    trim: true
   },
   country: {
     type: String,
