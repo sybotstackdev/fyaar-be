@@ -1,5 +1,7 @@
 const Author = require('../models/authorModel');
 const logger = require('../utils/logger');
+const Genre = require('../models/genreModel');
+const ApiError = require('../utils/ApiError');
 
 /**
  * Create a new author
@@ -8,20 +10,26 @@ const logger = require('../utils/logger');
  */
 const createAuthor = async (authorData) => {
   try {
+
+    // Validate that the genre exists
+    const genre = await Genre.findById(authorData.genre);
+    if (!genre) {
+      throw new ApiError(404, 'Genre not found');
+    }
+
     // Check if author name already exists
     const existingAuthor = await Author.nameExists(authorData.authorName);
     if (existingAuthor) {
-      throw new Error('Author name already exists');
+      throw new ApiError(400, 'Author name already exists');
     }
-
 
     // Create new author
     const author = new Author(authorData);
     await author.save();
 
     logger.info(`New author created: ${author.authorName}`);
-
-    return author;
+    const populatedAuthor = await Author.findById(author._id).populate('genre', 'title');
+    return populatedAuthor;
   } catch (error) {
     logger.error('Author creation error:', error.message);
     throw error;
@@ -41,16 +49,16 @@ const getAllAuthors = async (options = {}) => {
       sort = 'createdAt',
       order = 'desc',
       search = '',
+      genre = '',
       isActive = ''
     } = options;
 
     // Build query
     const query = {};
-    
+
     if (search) {
       query.$or = [
         { authorName: { $regex: search, $options: 'i' } },
-        { penName: { $regex: search, $options: 'i' } },
         { writingStyle: { $regex: search, $options: 'i' } },
         { designStyle: { $regex: search, $options: 'i' } }
       ];
@@ -58,6 +66,10 @@ const getAllAuthors = async (options = {}) => {
 
     if (isActive !== '') {
       query.isActive = isActive === 'true';
+    }
+
+    if (genre) {
+      query.genre = genre;
     }
 
     // Calculate skip value
@@ -69,6 +81,7 @@ const getAllAuthors = async (options = {}) => {
 
     // Execute query
     const authors = await Author.find(query)
+      .populate('genre', 'title')
       .sort(sortObj)
       .skip(skip)
       .limit(limit);
@@ -107,10 +120,10 @@ const getAllAuthors = async (options = {}) => {
  */
 const getAuthorById = async (authorId) => {
   try {
-    const author = await Author.findById(authorId).populate('descriptions');
+    const author = await Author.findById(authorId).populate('genre', 'title');
 
     if (!author) {
-      throw new Error('Author not found');
+      throw new ApiError(404, 'Author not found');
     }
 
     return author;
@@ -131,7 +144,15 @@ const updateAuthor = async (authorId, updateData) => {
     const author = await Author.findById(authorId);
 
     if (!author) {
-      throw new Error('Author not found');
+      throw new ApiError(404, 'Author not found');
+    }
+
+    // If genre is being updated, validate it exists
+    if (updateData.genre) {
+      const genre = await Genre.findById(updateData.genre);
+      if (!genre) {
+        throw new ApiError(404, 'Genre not found');
+      }
     }
 
     // Check if new author name conflicts with existing authors
@@ -141,18 +162,7 @@ const updateAuthor = async (authorId, updateData) => {
         _id: { $ne: authorId }
       });
       if (existingAuthor) {
-        throw new Error('Author name already exists');
-      }
-    }
-
-    // Check if new pen name conflicts with existing authors
-    if (updateData.penName && updateData.penName !== author.penName) {
-      const existingPenName = await Author.findOne({
-        penName: { $regex: updateData.penName, $options: 'i' },
-        _id: { $ne: authorId }
-      });
-      if (existingPenName) {
-        throw new Error('Pen name already exists');
+        throw new ApiError(400, 'Author name already exists');
       }
     }
 
@@ -162,7 +172,8 @@ const updateAuthor = async (authorId, updateData) => {
 
     logger.info(`Author updated: ${author.authorName}`);
 
-    return author;
+    const populatedAuthor = await Author.findById(author._id).populate('genre', 'title');
+    return populatedAuthor;
   } catch (error) {
     logger.error('Update author error:', error.message);
     throw error;
@@ -179,7 +190,7 @@ const deleteAuthor = async (authorId) => {
     const author = await Author.findById(authorId);
 
     if (!author) {
-      throw new Error('Author not found');
+      throw new ApiError(404, 'Author not found');
     }
 
     await Author.findByIdAndDelete(authorId);
@@ -203,7 +214,7 @@ const deactivateAuthor = async (authorId) => {
     const author = await Author.findById(authorId);
 
     if (!author) {
-      throw new Error('Author not found');
+      throw new ApiError(404, 'Author not found');
     }
 
     author.isActive = false;
@@ -228,7 +239,7 @@ const reactivateAuthor = async (authorId) => {
     const author = await Author.findById(authorId);
 
     if (!author) {
-      throw new Error('Author not found');
+      throw new ApiError(404, 'Author not found');
     }
 
     author.isActive = true;

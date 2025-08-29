@@ -19,11 +19,10 @@ const authorSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Design style cannot be more than 1000 characters']
   },
-  penName: {
-    type: String,
-    required: [true, 'Pen name is required'],
-    trim: true,
-    maxlength: [100, 'Pen name cannot be more than 100 characters']
+  genre: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Genre',
+    required: [true, 'Genre is required']
   },
   isActive: {
     type: Boolean,
@@ -37,7 +36,7 @@ const authorSchema = new mongoose.Schema({
 
 // Index for better query performance
 authorSchema.index({ authorName: 1 });
-authorSchema.index({ penName: 1 });
+authorSchema.index({ genre: 1 });
 authorSchema.index({ createdAt: -1 });
 
 // Static method to find author by name
@@ -45,20 +44,14 @@ authorSchema.statics.findByName = function(authorName) {
   return this.findOne({ authorName: { $regex: authorName, $options: 'i' } });
 };
 
-// Static method to find author by pen name
-authorSchema.statics.findByPenName = function(penName) {
-  return this.findOne({ penName: { $regex: penName, $options: 'i' } });
+// Static method to find authors by genre
+authorSchema.statics.findByGenre = function(genreId) {
+  return this.find({ genre: genreId, isActive: true });
 };
 
 // Static method to check if author name exists
 authorSchema.statics.nameExists = async function(authorName) {
   const author = await this.findOne({ authorName: { $regex: authorName, $options: 'i' } });
-  return !!author;
-};
-
-// Static method to check if pen name exists
-authorSchema.statics.penNameExists = async function(penName) {
-  const author = await this.findOne({ penName: { $regex: penName, $options: 'i' } });
   return !!author;
 };
 

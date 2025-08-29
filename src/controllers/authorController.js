@@ -8,13 +8,13 @@ const logger = require('../utils/logger');
  * POST /api/authors
  */
 const createAuthor = asyncHandler(async (req, res) => {
-  const { authorName, writingStyle, penName,designStyle } = req.body;
+  const { authorName, writingStyle, designStyle, genre } = req.body;
 
   const result = await AuthorService.createAuthor({
     authorName,
     writingStyle,
     designStyle,
-    penName
+    genre
   });
 
   return ApiResponse.created(res, 'Author created successfully', result);
@@ -25,7 +25,7 @@ const createAuthor = asyncHandler(async (req, res) => {
  * GET /api/authors
  */
 const getAllAuthors = asyncHandler(async (req, res) => {
-  const { page, limit, sort, order, search, isActive } = req.query;
+  const { page, limit, sort, order, search, isActive, genre } = req.query;
 
   const result = await AuthorService.getAllAuthors({
     page: parseInt(page) || 1,
@@ -33,6 +33,7 @@ const getAllAuthors = asyncHandler(async (req, res) => {
     sort: sort || 'createdAt',
     order: order || 'desc',
     search: search || '',
+    genre: genre || '',
     isActive: isActive || ''
   });
 

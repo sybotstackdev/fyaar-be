@@ -305,10 +305,9 @@ const validateAuthor = [
     .isLength({ min: 10, max: 1000 })
     .withMessage('Design style must be between 10 and 1000 characters'),
 
-  body('penName')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Pen name must be between 2 and 100 characters'),
+  body('genre')
+    .isMongoId()
+    .withMessage('Genre must be a valid MongoDB ObjectId'),
 
   handleValidationErrors
 ];

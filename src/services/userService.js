@@ -100,7 +100,7 @@ const getProfile = async (userId) => {
   try {
     const user = await User.findById(userId)
       .select('-password')
-      .populate('favAuthors', 'authorName penName')
+      .populate('favAuthors', 'authorName')
       .populate('favGenres', 'title');
 
     if (!user) {
@@ -167,7 +167,7 @@ const updateProfile = async (userId, updateData) => {
       { new: true, runValidators: true }
     )
       .select('-password')
-      .populate('favAuthors', 'authorName penName')
+      .populate('favAuthors', 'authorName')
       .populate('favGenres', 'title');
 
     if (!user) {
