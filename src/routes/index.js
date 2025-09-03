@@ -14,6 +14,7 @@ const tagRoutes = require('./tagRoutes');
 const bookRoutes = require('./admin/bookRoutes');
 const bookChapterRoutes = require('./admin/bookChapterRoutes');
 const categoryRoutes = require('./admin/categoryRoutes');
+const bookBatchRoutes = require('./admin/bookBatchRoutes');
 
 const router = express.Router();
 
@@ -44,6 +45,7 @@ router.use('/visual-prompts', visualPromptRoutes);
 router.use('/books', bookRoutes);
 router.use('/books/chapters', bookChapterRoutes);
 router.use('/categories', categoryRoutes);
+router.use('/batches', bookBatchRoutes);
 
 // 404 handler for API routes
 router.use('*', (req, res) => {

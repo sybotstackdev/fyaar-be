@@ -1,0 +1,128 @@
+require('dotenv').config();
+const OpenAI = require('openai');
+const logger = require('../../utils/logger');
+const ApiError = require('../../utils/ApiError');
+
+class OpenAIParseError extends ApiError {
+    constructor(message, prompt, rawResponse) {
+        super(500, message);
+        this.prompt = prompt;
+        this.rawResponse = rawResponse;
+    }
+}
+
+if (!process.env.OPENAI_API_KEY) {
+  logger.error('OpenAI API key is not configured. Please check your .env file.');
+  throw new Error('OpenAI API key is not configured.');
+}
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+/**
+ * Generate a chat completion using OpenAI.
+ * @param {string} systemPrompt - The system prompt defining the assistant's behavior.
+ * @param {string} userPrompt - The user's prompt.
+ * @param {string} model - The model to use for the completion (e.g., 'gpt-4', 'gpt-3.5-turbo', 'o3-mini'). Defaults to 'gpt-4'.
+ * @returns {Promise<string>} The generated content from the assistant.
+ */
+const generateChatCompletion = async (systemPrompt, userPrompt, model = 'o3-mini') => {
+  try {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ];
+
+    logger.info(`Requesting OpenAI chat completion with model ${model}`);
+
+    const response = await openai.chat.completions.create({
+      model,
+      messages
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content in OpenAI response.');
+    }
+
+    logger.info('OpenAI chat completion generated successfully.');
+    return content.trim();
+  } catch (error) {
+    logger.error('Error generating chat completion from OpenAI:', error.message);
+    throw new ApiError(500, 'Failed to generate chat completion from OpenAI');
+  }
+};
+
+/**
+ * Generates book titles using OpenAI based on a specific prompt structure.
+ * @param {string} storyDescription - The description of the story.
+ * @param {string} genreLayer - The genre layer for the story.
+ * @returns {Promise<Object>} A promise that resolves to an object with categorized book titles.
+ */
+const generateBookTitles = async (storyDescription, genreLayer) => {
+  const systemPrompt = `You are a professional publishing assistant. Follow these universal rules strictly for book title
+generation:
+- Titles must be original: do not duplicate or closely copy famous books, films, or TV brands.
+- No profanity, sexual slang, graphic violence, or extreme kinks in titles.
+- No names or references to gods, deities, sacred texts, temples, mosques, churches, rituals,
+caste identities, politics, or nationalism.
+- Avoid cultural caricatures, stereotypes, or discriminatory language.
+- No meta commentary, filler words, subtitles, numbering, or format breaks.
+- Avoid clichés/overused words in titles: forever, always, passion, destiny, heart, soul, dark,
+legend, silent, girl, missing.
+- Titles must remain under 5 words and follow the exact output format requested.`;
+
+  const userPrompt = `You are a professional book-naming editor specializing in international romance and women’s
+fiction.
+INPUT
+STORY_DESCRIPTION: ${storyDescription}
+GENRE_LAYER: ${genreLayer}
+TASK
+Step 1 (internal): Extract motifs, emotional themes, and unique phrases. Do not output this step.
+Step 2: Generate 9 book titles divided into 3 categories:
+1) poetic_metaphorical → lyrical, image-driven, emotional (≤4 words)
+2) conversational_modern → casual, quotable, playful (≤4 words)
+3) ironic_bittersweet → paradoxical or layered tone (≤4 words)
+OUTPUT FORMAT
+{
+"poetic_metaphorical": ["t1", "t2", "t3"],
+"conversational_modern": ["t4", "t5", "t6"],
+"ironic_bittersweet": ["t7", "t8", "t9"]
+}
+HARD RULES
+- Keep every title under 5 words.
+- Do not use restricted words listed in system rules.
+- Each title must have distinct rhythm/structure (avoid repeating “The [Noun] of [Noun]”).
+- Titles should align with GENRE_LAYER while still appealing to contemporary
+romance/women’s fiction readers (think Colleen Hoover, Emily Henry, Taylor Jenkins Reid, Sally
+Rooney).
+- Cultural sensitivity required; optional subtle Indian-English imagery is allowed (monsoon,
+verandas, trains, courtyards, mango, chai) but keep wording universal/international.`;
+
+    const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+    const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+
+    try {
+        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            logger.error('No valid JSON object found in the AI response.');
+            throw new OpenAIParseError('No valid JSON object found in the AI response.', fullPrompt, rawContent);
+        }
+        const jsonString = jsonMatch[0];
+        const parsedContent = JSON.parse(jsonString);
+        logger.info('Successfully parsed book titles from OpenAI response.');
+        return { parsedContent, fullPrompt, rawContent };
+    } catch (error) {
+        logger.error('Failed to parse JSON from OpenAI response:', error.message);
+        logger.debug('Raw content from OpenAI:', rawContent);
+        throw new OpenAIParseError('Failed to parse book titles from AI response.', fullPrompt, rawContent);
+    }
+};
+
+
+module.exports = {
+  generateChatCompletion,
+  generateBookTitles,
+  OpenAIParseError
+};
