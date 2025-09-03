@@ -14,6 +14,8 @@ const queueJob = async (jobName, data) => {
             type: 'exponential',
             delay: 1000,
         },
+        removeOnComplete: 1000,
+        removeOnFail: 500
     });
 };
 

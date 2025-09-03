@@ -120,9 +120,56 @@ verandas, trains, courtyards, mango, chai) but keep wording universal/internatio
     }
 };
 
+/**
+ * Generates a book description using OpenAI.
+ * @param {object} promptData - The data for the prompt.
+ * @returns {Promise<object>} A promise that resolves to the generated description and the full prompt.
+ */
+const generateBookDescription = async (promptData) => {
+    const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
+
+    const systemPrompt = `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
+Follow these rules strictly:
+- All characters must be 21+ (no minors).
+- No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, or porn-industry settings.
+- No profanity, sexual slang, extreme kinks, or graphic violence.
+- No references to gods, deities, sacred texts, temples, mosques, churches, rituals, worship, caste identities, politics, or nationalism.
+- No stereotypes, cultural caricatures, or discriminatory language.
+- No clichés (“heart skipped a beat,” “souls entwined,” etc.).
+- No meta commentary, filler text, or author notes.
+- No breaking format: return output exactly as instructed.`;
+
+    const userPrompt = `INPUT
+title: ${title}
+genre: ${genre}
+variant: ${variant}
+location: ${location}
+characters: ${JSON.stringify(characters)}
+trope_description: ${trope_description}
+chapter_summaries: ${chapter_summaries}
+
+TASK
+Step 1 (internal): Extract conflict, romantic tension, emotional stakes, motifs, and character dynamics. Weave in location if provided (1–2 times). Do not output this step.
+Step 2: Write ONE description (~100 words) in the specified variant style.
+
+HARD RULES
+- Length: ~100 words, no labels or numbering.
+- Use provided or fallback character names naturally (2–3 mentions max).
+- Mention location (if provided) 1–2 times max.
+- Do not reveal chapter structure, POV, or spice level.
+- Do not spoil the ending.
+- Output only the description, nothing else.`;
+
+    const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+    const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+
+    return { description: rawContent, fullPrompt, rawContent };
+};
+
 
 module.exports = {
   generateChatCompletion,
   generateBookTitles,
+  generateBookDescription,
   OpenAIParseError
 };
