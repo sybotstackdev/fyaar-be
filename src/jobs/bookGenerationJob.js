@@ -157,7 +157,7 @@ const processBookDescriptionGeneration = async (bookId) => {
                 select: 'description',
                 populate: {
                     path: 'variants',
-                    select: 'title'
+                    select: 'name'
                 }
             })
             .populate({
@@ -176,13 +176,13 @@ const processBookDescriptionGeneration = async (bookId) => {
         let randomVariant = '';
         if (variants && variants.length > 0) {
             const randomIndex = Math.floor(Math.random() * variants.length);
-            randomVariant = variants[randomIndex].title;
+            randomVariant = variants[randomIndex].name;
         }
 
         const promptData = {
             title: book.title,
-            genre: book.genres?.[0]?.description ?? 'romance',
-            variant: randomVariant,
+            genre: book.genres?.[0]?.description ?? '',
+            variant: randomVariant || '',
             location: '',
             characters: '',
             trope_description: book.plots?.[0]?.description ?? '',
