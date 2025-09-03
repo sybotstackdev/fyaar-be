@@ -31,6 +31,10 @@ const createBookBatch = async (batchData, userId) => {
         authors: book.authors,
         genres: book.genres,
         plots: book.plots,
+        narrative: book.narratives,
+        locations: book.locations,
+        spiceLevels: book.spiceLevels,
+        endings: book.endings,
         batchId: newBatch._id,
         userId,
         status: 'generating',
@@ -42,7 +46,7 @@ const createBookBatch = async (batchData, userId) => {
     }
     logger.info(`${books.length} placeholder books created for batch ID: ${newBatch._id}`);
 
-    // jobService.queueJob('generate-titles', { batchId: newBatch._id });
+    jobService.queueJob('generate-titles', { batchId: newBatch._id });
     logger.info(`Job queued with BullMQ for batch ID: ${newBatch._id}`);
 
     return newBatch;
