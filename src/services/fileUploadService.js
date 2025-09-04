@@ -15,7 +15,7 @@ const uploadToS3 = async (file, folder) => {
 
         const optimizedBuffer = await sharp(file.buffer)
             .resize({ width: 1500, withoutEnlargement: true })
-            .webp({ quality: 92 })
+            .webp({ quality: 95 })
             .toBuffer();
 
         const params = {

@@ -3,7 +3,7 @@ const { Worker } = require('bullmq');
 const mongoose = require('mongoose');
 const config = require('./config/environment');
 const logger = require('./utils/logger');
-const { processBookTitleGeneration, processBookDescriptionGeneration } = require('./jobs/bookGenerationJob');
+const { processBookTitleGeneration, processBookDescriptionGeneration, processBookChapterGeneration, processBookCoverGeneration } = require('./jobs/bookGenerationJob');
 
 const redisConnection = {
     host: config.redis.host || '127.0.0.1',
@@ -26,8 +26,15 @@ const worker = new Worker('book-generation', async job => {
         await processBookTitleGeneration(job.data.batchId);
     } else if (job.name === 'generate-description') {
         await processBookDescriptionGeneration(job.data.bookId);
+    } else if (job.name === 'generate-chapters') {
+        await processBookChapterGeneration(job.data.bookId);
+    } else if(job.name === 'generate-cover') {
+        await processBookCoverGeneration(job.data.bookId);
     }
-}, { connection: redisConnection });
+}, {
+    connection: redisConnection,
+    concurrency: 5
+});
 
 worker.on('completed', job => {
     logger.info(`Job ${job.id} has completed!`);

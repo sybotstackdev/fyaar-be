@@ -1,7 +1,9 @@
+require('dotenv').config();
 const axios = require('axios');
 const config = require('../../config/environment');
 const logger = require('../../utils/logger');
 const ApiError = require('../../utils/ApiError');
+const { uploadToS3 } = require('../fileUploadService');
 
 if (!config.ideogram || !config.ideogram.apiKey) {
   logger.error('Ideogram API key is not configured in environment.js');
@@ -11,69 +13,50 @@ if (!config.ideogram || !config.ideogram.apiKey) {
 const ideogramApi = axios.create({
   baseURL: 'https://api.ideogram.ai/v1',
   headers: {
-    Authorization: `Bearer ${config.ideogram.apiKey}`,
-    'Content-Type': 'application/json'
+    'Api-Key': config.ideogram.apiKey
   }
 });
 
-/**
- * Polls the Ideogram API for the result of an image generation job.
- * @param {string} requestId - The request ID of the generation job.
- * @returns {Promise<string>} The URL of the generated image.
- */
-const pollForResult = async (requestId) => {
-  const pollInterval = 2000; // 2 seconds
-  const maxAttempts = 30; // 1 minute timeout
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-      logger.info(`Polling for request ID: ${requestId} (Attempt ${attempt + 1})`);
-      const response = await ideogramApi.get(`/images/generations/${requestId}`);
-      const { state, images } = response.data;
-
-      if (state === 'completed') {
-        if (images && images.length > 0 && images[0].url) {
-          logger.info(`Image generation completed for request ID: ${requestId}`);
-          return images[0].url;
-        } else {
-          throw new Error('Generation completed but no image URL was found.');
-        }
-      } else if (state !== 'pending' && state !== 'processing') {
-        throw new Error(`Image generation failed with state: ${state}`);
-      }
-    } catch (error) {
-      logger.error(`Error polling for Ideogram result for request ID ${requestId}:`, error.message);
-      throw new ApiError(500, 'Failed to poll for image generation result.');
-    }
-  }
-
-  throw new ApiError(408, 'Image generation timed out.');
-};
 
 /**
  * Generate an image using the Ideogram API.
  * @param {string} prompt - The prompt to generate the image from.
- * @returns {Promise<string>} The URL of the generated image.
+ * @returns {Promise<{ideogramUrl: string, s3Url: string}>} The URL of the generated image from Ideogram and the URL after saving to S3.
  */
 const generateImage = async (prompt) => {
   try {
-    logger.info('Sending image generation request to Ideogram...');
-    const response = await ideogramApi.post('/images/generations', {
-      prompt
-    });
+    logger.info(`Starting image generation for prompt: ${prompt}`);
 
-    const requestId = response.data.request_id;
-    if (!requestId) {
-      throw new Error('No request_id returned from Ideogram.');
+    const { data } = await ideogramApi.post('/ideogram-v3/generate', {
+      prompt: prompt,
+      aspect_ratio: "2x3",
+      magic_prompt: "ON",
+      negative_prompt: "Do *not* include any other text on the cover besides the title and author name. Avoid filler taglines, series names, or fake blurbs — keep it clean and typography-focused."
+    });
+    logger.info(`Ideogram API response: ${data}`);
+
+    const ideogramUrl = data?.data?.[0]?.url || null;
+
+    if (!ideogramUrl) {
+      logger.error('Unexpected Ideogram response shape:', JSON.stringify(data));
+      throw new ApiError(502, 'Ideogram did not return an image URL.');
     }
 
-    logger.info(`Ideogram generation started with request ID: ${requestId}`);
-    return await pollForResult(requestId);
-  } catch (error) {
-    logger.error('Error generating image from Ideogram:', error.response ? error.response.data : error.message);
-    throw new ApiError(500, 'Failed to generate image from Ideogram.');
+    logger.info(`Ideogram returned URL: ${ideogramUrl}`);
+
+    const imgResp = await axios.get(ideogramUrl, { responseType: 'arraybuffer', timeout: 60_000 });
+    const buffer = Buffer.from(imgResp.data);
+
+    const s3Url = await uploadToS3({ buffer }, 'book-covers');
+    logger.info(`Uploaded generated cover to S3: ${s3Url}`);
+
+    return { ideogramUrl, s3Url };
+
+  } catch (err) {
+    const msg = err?.response?.data || err?.message || err;
+    logger.error('Error in generateImage (Ideogram -> S3):', msg);
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, 'Image generation/upload failed.');
   }
 };
 

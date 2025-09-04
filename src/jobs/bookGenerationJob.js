@@ -1,10 +1,12 @@
 const BookBatch = require('../models/bookBatchModel');
 const Book = require('../models/bookModel');
 const BookGeneratedContent = require('../models/bookGeneratedContentModel');
-const { generateBookTitles, generateBookDescription, OpenAIParseError } = require('../services/ai/openAI');
+const BookChapter = require('../models/bookChapterModel');
+const { generateBookTitles, generateBookDescription, generateBookChapters, OpenAIParseError, generateBookCoverPrompt } = require('../services/ai/openAI');
 const jobService = require('../services/jobService');
 const logger = require('../utils/logger');
 const mongoose = require('mongoose');
+const { generateImage } = require('../services/ai/imageGeneration');
 
 require('../models/genreModel');
 require('../models/plotModel');
@@ -13,6 +15,8 @@ require('../models/locationModel');
 require('../models/authorModel');
 require('../models/narrativeModel');
 require('../models/genreVariantModel');
+require('../models/spiceLevelModel');
+require('../models/endingModel');
 
 /**
  * @desc Processes a batch to generate book titles using OpenAI
@@ -99,10 +103,11 @@ const processBookTitleGeneration = async (batchId) => {
                 book.generationStatus.title.status = 'completed';
                 await book.save({ session });
 
-                jobService.queueJob('generate-description', { bookId: book._id });
-
-                logger.info(`Successfully generated and assigned title for book: ${book._id}. New title: "${selectedTitle}"`);
                 await session.commitTransaction();
+                // --- Dispatch description job ---
+                jobService.queueJob('generate-description', { bookId: book._id });
+                logger.info(`Successfully generated and assigned title for book: ${book._id}. Queued description job.`);
+
             } catch (error) {
                 await session.abortTransaction();
                 logger.error(`Failed to generate titles for book: ${book._id} in batch: ${batchId}`, error);
@@ -150,6 +155,8 @@ const processBookDescriptionGeneration = async (bookId) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    let bookWasFound = false; // Flag to ensure we don't queue jobs for non-existent books
+
     try {
         const book = await Book.findById(bookId)
             .populate({
@@ -169,6 +176,7 @@ const processBookDescriptionGeneration = async (bookId) => {
         if (!book) {
             throw new Error(`Book with ID ${bookId} not found.`);
         }
+        bookWasFound = true; // Set the flag now that we've found the book
 
         await book.updateOne({ 'generationStatus.description.status': 'in_progress' }, { session });
 
@@ -182,7 +190,7 @@ const processBookDescriptionGeneration = async (bookId) => {
         if (variants && variants.length > 0) {
             const randomIndex = Math.floor(Math.random() * variants.length);
             const selectedVariant = variants[randomIndex];
-            
+
             if (selectedVariant && selectedVariant.name) {
                 randomVariantName = selectedVariant.name;
                 randomVariantId = selectedVariant._id;
@@ -227,8 +235,201 @@ const processBookDescriptionGeneration = async (bookId) => {
         });
         throw error;
     } finally {
+        if (bookWasFound) {
+            jobService.queueJob('generate-chapters', { bookId: bookId });
+            logger.info(`Queued chapter generation for book: ${bookId}`);
+        }
         session.endSession();
     }
 };
 
-module.exports = { processBookTitleGeneration, processBookDescriptionGeneration };
+/**
+ * @desc Processes a single book to generate all its chapters using OpenAI
+ * @param {string} bookId - The ID of the book to process
+ */
+const processBookChapterGeneration = async (bookId) => {
+    logger.info(`Starting chapter generation for book: ${bookId}`);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    const book = await Book.findById(bookId)
+        .populate({
+            path: 'plots',
+            select: 'title description',
+            populate: { path: 'chapters', select: 'name description order' }
+        })
+        .populate('narrative', 'description')
+        .populate('spiceLevels', 'comboName description')
+        .populate('endings', 'optionLabel');
+
+    if (!book) throw new Error(`Book not found: ${bookId}`);
+    const batchId = book.batchId;
+    let bookWasFound = true;
+    try {
+
+        await book.updateOne({ 'generationStatus.chapters.status': 'in_progress' }, { session });
+
+        const plot = book.plots?.[0];
+        if (!plot) throw new Error(`Plot not found for book: ${bookId}`);
+
+        const chapterBeats = plot.chapters
+            .sort((a, b) => a.order - b.order)
+            .map(c => `${c.name}: ${c.description}`)
+            .join('\n');
+
+        const spiceLevel = book.spiceLevels?.[0];
+
+        const promptData = {
+            title: book.title,
+            trope_name: plot.title,
+            trope_description: plot.description,
+            chapter_beats: chapterBeats,
+            narrative: book.narrative?.[0]?.description ?? '',
+            spice_level: spiceLevel ? `${spiceLevel.comboName} (${spiceLevel.description})` : '',
+            ending_type: book.endings?.[0]?.optionLabel ?? '',
+            location: '',
+            characters: ''
+        };
+
+        const { chaptersJSON, fullPrompt, rawContent } = await generateBookChapters(promptData);
+
+        await BookGeneratedContent.create({
+            bookId: book._id,
+            batchId: book.batchId,
+            contentType: 'chapter',
+            promptUsed: fullPrompt,
+            rawApiResponse: rawContent,
+            source: 'OpenAI-o3-mini'
+        });
+
+        const newChapters = chaptersJSON.chapters.map((c, i) => ({
+            book: book._id,
+            title: c?.title,
+            content: c?.prose,
+            order: i + 1,
+            status: 'published'
+        }));
+
+        await BookChapter.insertMany(newChapters, { session });
+
+        book.generationStatus.chapters.status = 'completed';
+        await book.save({ session });
+
+        await session.commitTransaction();
+        logger.info(`Successfully generated ${newChapters.length} chapters for book: ${bookId}`);
+    } catch (error) {
+        await session.abortTransaction();
+        logger.error(`Failed to generate chapters for book: ${bookId}`, error);
+        await Book.findByIdAndUpdate(bookId, {
+            'generationStatus.chapters.status': 'failed',
+            'generationStatus.chapters.errorMessage': error.message || 'An unknown error occurred'
+        });
+
+        if (error instanceof OpenAIParseError) {
+            try {
+                await BookGeneratedContent.create({
+                    bookId: bookId,
+                    batchId: batchId,
+                    contentType: 'chapter',
+                    promptUsed: error.prompt,
+                    rawApiResponse: error.rawResponse,
+                    source: 'OpenAI-o3-mini'
+                });
+            } catch (e) {
+                logger.warn('Could not save parse-error payload:', e.message);
+            }
+        }
+        throw error;
+    } finally {
+        if (bookWasFound) {
+            jobService.queueJob('generate-cover', { bookId: bookId });
+            logger.info(`Queued cover generation for book: ${bookId}`);
+        }
+        session.endSession();
+    }
+
+};
+
+/**
+ * @desc Processes a single book to generate a cover using OpenAI
+ * @param {*} bookId 
+ */
+const processBookCoverGeneration = async (bookId) => {
+    logger.info(`Starting book cover generation for: ${bookId}`);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    let bookWasFound = false;
+
+    try {
+        const book = await Book.findById(bookId)
+            .populate({
+                path: 'plots',
+                select: 'description',
+                populate: { path: 'chapters', select: 'description' }
+            })
+            .populate('genres', 'description')
+            .populate('authors', 'authorName writingStyle designStyle')
+            .populate('spiceLevels', 'comboName description')
+            .populate('endings', 'optionLabel');
+
+        if (!book) {
+            throw new Error(`Book with ID ${bookId} not found.`);
+        }
+        bookWasFound = true;
+
+        await book.updateOne({ 'generationStatus.cover.status': 'in_progress_prompt' }, { session });
+
+        const promptData = {
+            trope_description: book.plots?.[0]?.description ?? '',
+            chapter_summaries: book.plots?.[0]?.chapters?.map(c => c.description).join('; ') ?? '',
+            ending_type: book.endings?.[0]?.optionLabel ?? '',
+            spice_level: book.spiceLevels?.[0]?.description ?? ''
+        };
+
+        const { description, fullPrompt, rawContent } = await generateBookCoverPrompt(promptData);
+        logger.info(`Prompt description: ${JSON.stringify(description)}`);
+
+        const authorName = book.authors?.[0]?.authorName ?? '';
+        const designStyle = book.authors?.[0]?.designStyle ?? '';
+        const genreDesc = book.genres?.[0]?.description ?? '';
+
+        const coverPrompt = `Design a book cover with the title "${book.title}" at the top and the author "${authorName}" at the bottom. Depict ${description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
+            .replace(/\s+/g, ' ').trim();
+
+        await book.updateOne({ 'generationStatus.cover.status': 'in_progress_image' }, { session });
+        const { ideogramUrl, s3Url } = await generateImage(coverPrompt);
+
+        await BookGeneratedContent.create([{
+            bookId: book._id,
+            batchId: book.batchId,
+            contentType: 'cover_image_url',
+            content: s3Url,
+            promptUsed: coverPrompt,
+            rawApiResponse: JSON.stringify({ ideogramUrl, s3Url }),
+            source: 'Ideogram'
+        }], { session });
+
+        book.bookCover = s3Url;
+        book.generationStatus.cover.status = 'completed';
+        await book.save({ session });
+
+        await session.commitTransaction();
+        logger.info(`Successfully generated cover for book: ${bookId} | S3: ${s3Url}`);
+    } catch (error) {
+        await session.abortTransaction();
+        logger.error(`Failed to generate cover for book: ${bookId}`, error);
+
+        if (bookWasFound) {
+            await Book.findByIdAndUpdate(bookId, {
+                'generationStatus.cover.status': 'failed',
+                'generationStatus.cover.errorMessage': error.message || 'An unknown error occurred'
+            });
+        }
+        throw error;
+    } finally {
+        session.endSession();
+    }
+};
+
+module.exports = { processBookTitleGeneration, processBookDescriptionGeneration, processBookChapterGeneration, processBookCoverGeneration };

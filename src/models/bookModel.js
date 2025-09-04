@@ -39,8 +39,7 @@ const bookSchema = new mongoose.Schema({
     batchId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'BookBatch',
-        index: true,
-        default: null
+        index: true
     },
     generationStatus: {
         title: {

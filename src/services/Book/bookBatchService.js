@@ -1,8 +1,10 @@
 const BookBatch = require('../../models/bookBatchModel');
 const Book = require('../../models/bookModel');
+const BookGeneratedContent = require('../../models/bookGeneratedContentModel');
 const jobService = require('../jobService');
 const logger = require('../../utils/logger');
 const ApiError = require('../../utils/ApiError');
+const BookChapter = require('../../models/bookChapterModel');
 
 /**
  * @desc    Create a new book batch
@@ -116,28 +118,23 @@ const getBookBatchById = async (bookBatchId) => {
 };
 
 /**
- * @desc    Delete a book batch
- * @param   {string} bookBatchId - The ID of the book batch
- * @returns {Promise<boolean>} Success status
+ * Delete book batch by id
+ * @param {ObjectId} bookBatchId
+ * @returns {Promise<BookBatch>}
  */
 const deleteBookBatch = async (bookBatchId) => {
-    try {
-        const bookBatch = await BookBatch.findById(bookBatchId);
-        if (!bookBatch) {
-            throw new ApiError(404, 'Book batch not found');
-        }
+    const books = await Book.find({ batchId: bookBatchId }).select('_id').lean();
+    const bookIds = books.map(book => book._id);
 
-        const bookDeletionResult = await Book.deleteMany({ batchId: bookBatchId });
-        logger.info(`Deleted ${bookDeletionResult.deletedCount} books for batch ${bookBatchId}.`);
+    await Promise.all([
+        BookChapter.deleteMany({ book: { $in: bookIds } }),
+        Book.deleteMany({ batchId: bookBatchId }),
+        BookGeneratedContent.deleteMany({ batchId: bookBatchId })
+    ]);
 
-        await bookBatch.deleteOne();
-        
-        logger.info(`Book batch deleted: ${bookBatch.name}`);
-        return true;
-    } catch (error) {
-        logger.error('Delete book batch error:', error.message);
-        throw error;
-    }
+    const bookBatch = await BookBatch.findByIdAndDelete(bookBatchId);
+    logger.info(`Book batch deleted: ${bookBatch.name}`);
+    return true;
 };
 
 module.exports = {

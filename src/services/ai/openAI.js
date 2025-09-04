@@ -4,11 +4,11 @@ const logger = require('../../utils/logger');
 const ApiError = require('../../utils/ApiError');
 
 class OpenAIParseError extends ApiError {
-    constructor(message, prompt, rawResponse) {
-        super(500, message);
-        this.prompt = prompt;
-        this.rawResponse = rawResponse;
-    }
+  constructor(message, prompt, rawResponse) {
+    super(500, message);
+    this.prompt = prompt;
+    this.rawResponse = rawResponse;
+  }
 }
 
 if (!process.env.OPENAI_API_KEY) {
@@ -100,24 +100,24 @@ Rooney).
 - Cultural sensitivity required; optional subtle Indian-English imagery is allowed (monsoon,
 verandas, trains, courtyards, mango, chai) but keep wording universal/international.`;
 
-    const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
-    const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+  const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+  const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
 
-    try {
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            logger.error('No valid JSON object found in the AI response.');
-            throw new OpenAIParseError('No valid JSON object found in the AI response.', fullPrompt, rawContent);
-        }
-        const jsonString = jsonMatch[0];
-        const parsedContent = JSON.parse(jsonString);
-        logger.info('Successfully parsed book titles from OpenAI response.');
-        return { parsedContent, fullPrompt, rawContent };
-    } catch (error) {
-        logger.error('Failed to parse JSON from OpenAI response:', error.message);
-        logger.debug('Raw content from OpenAI:', rawContent);
-        throw new OpenAIParseError('Failed to parse book titles from AI response.', fullPrompt, rawContent);
+  try {
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      logger.error('No valid JSON object found in the AI response.');
+      throw new OpenAIParseError('No valid JSON object found in the AI response.', fullPrompt, rawContent);
     }
+    const jsonString = jsonMatch[0];
+    const parsedContent = JSON.parse(jsonString);
+    logger.info('Successfully parsed book titles from OpenAI response.');
+    return { parsedContent, fullPrompt, rawContent };
+  } catch (error) {
+    logger.error('Failed to parse JSON from OpenAI response:', error.message);
+    logger.debug('Raw content from OpenAI:', rawContent);
+    throw new OpenAIParseError('Failed to parse book titles from AI response.', fullPrompt, rawContent);
+  }
 };
 
 /**
@@ -126,9 +126,9 @@ verandas, trains, courtyards, mango, chai) but keep wording universal/internatio
  * @returns {Promise<object>} A promise that resolves to the generated description and the full prompt.
  */
 const generateBookDescription = async (promptData) => {
-    const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
+  const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
 
-    const systemPrompt = `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
+  const systemPrompt = `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
 Follow these rules strictly:
 - All characters must be 21+ (no minors).
 - No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, or porn-industry settings.
@@ -139,7 +139,7 @@ Follow these rules strictly:
 - No meta commentary, filler text, or author notes.
 - No breaking format: return output exactly as instructed.`;
 
-    const userPrompt = `INPUT
+  const userPrompt = `INPUT
 title: ${title}
 genre: ${genre}
 variant: ${variant}
@@ -160,10 +160,114 @@ HARD RULES
 - Do not spoil the ending.
 - Output only the description, nothing else.`;
 
-    const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
-    const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+  const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+  const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
 
-    return { description: rawContent, fullPrompt, rawContent };
+  return { description: rawContent, fullPrompt, rawContent };
+};
+
+/**
+ * Generates book chapters using OpenAI.
+ * @param {object} promptData - The data for the prompt.
+ * @returns {Promise<object>} A promise that resolves to the generated chapters and the full prompt.
+ */
+const generateBookChapters = async (promptData) => {
+  const { title, trope_name, trope_description, chapter_beats, narrative, spice_level, ending_type, location, characters } = promptData;
+
+  const systemPrompt = `SYSTEM: ROMANCE SHORT STORY ENGINE — CHAPTER GENERATION
+
+You are a professional romance author creating immersive, emotionally intense stories for an international audience.
+Follow these universal rules strictly:
+- All characters must be 21+.
+- No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, porn-industry settings.
+- No profanity, extreme kinks, or graphic violence.
+- No references to gods, deities, sacred texts, temples, mosques, churches, rituals, worship, caste identities, politics, or nationalism.
+- No stereotypes, cultural caricatures, or discriminatory language.
+- No clichés (“heart skipped a beat,” “souls entwined,” etc.).
+- No meta commentary, filler text, watermarks, or author notes.
+- No format breaks (output prose only, follow requested structure).`;
+
+  const userPrompt = `INPUT
+title: ${title}
+trope_name: ${trope_name}
+trope_description: ${trope_description}
+chapter_beats: ${chapter_beats} # 3-chapter plan with key beats per chapter
+Narrative: ${narrative} 
+spice_level: ${spice_level} # apply intimacy baseline; step down if continuity breaks
+ending_type: ${ending_type}
+location: ${location || ''}
+characters: ${JSON.stringify(characters) || '""'} # if absent, use trope names; if none, assign natural names and keep consistent
+
+SPECIFICATIONS
+- Chapters: 3 (long-form, immersive)
+- Length: 5000–9000 characters each (~1000–1500 words)
+- Follow pov_pattern per chapter_beats
+- Apply spice_level with explicit consent and aftercare where required
+- Maintain strict continuity of names, setting, timeline, and world details across chapters
+
+TASK
+Write all 3 chapters in sequence. Each chapter must:
+- Start with a short *tagline* (sets mood).
+- Follow the assigned POV for that chapter.
+- Include intimacy per the spice baseline; step down one level if continuity or consent would break.
+- End with a *cliffhanger or resolution line* that fits the ending_type.
+- Flow naturally into the next chapter.
+
+OUTPUT FORMAT
+Return ONLY valid JSON. Do not include markdown fences, commentary, or labels.
+{
+  "chapters": [
+    { "title": "string", "tagline": "string", "prose": "string" },
+    { "title": "string", "tagline": "string", "prose": "string" },
+    { "title": "string", "tagline": "string", "prose": "string" }
+  ]
+}`;
+
+  const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+  const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+
+  const stripFences = (s) =>
+    (s || '')
+      .replace(/```json\s*([\s\S]*?)```/gi, '$1')
+      .replace(/```\s*([\s\S]*?)```/gi, '$1')
+      .trim();
+
+  const cleaned = stripFences(rawContent);
+  let parsed;
+
+  try {
+    const match = cleaned.match(/\{[\s\S]*\}$/);
+    const jsonText = (match ? match[0] : cleaned);
+    parsed = JSON.parse(jsonText);
+
+    if (!parsed || !Array.isArray(parsed.chapters) || parsed.chapters.length !== 3) {
+      throw new Error('Invalid chapter JSON: "chapters" must be an array of 3 items.');
+    }
+  } catch (error) {
+    logger.error('Failed to parse chapters JSON from OpenAI:', error.message);
+    logger.debug('Raw content from OpenAI (chapters):', rawContent);
+    throw new OpenAIParseError('Failed to parse chapters JSON from AI response.', fullPrompt, rawContent);
+  }
+
+  logger.info('Successfully parsed chapters JSON from OpenAI.');
+  return { chaptersJSON: parsed, fullPrompt, rawContent };
+};
+
+const generateBookCoverPrompt = async (promptData) => {
+  const { trope_description, chapter_summaries, ending_type, spice_level } = promptData;
+
+  const systemPrompt = ``;
+
+  const userPrompt = `Write a concise scene description (1–3 sentences) for a book cover.  
+Base it on the ${trope_description} and key ${chapter_summaries}.  
+Convey ${ending_type} and ${spice_level} through atmosphere, mood, body language, and proximity cues.  
+Do not reference art style, colors, or typography.  
+Output only the scene description, no extra commentary.`;
+
+  const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+  const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+
+  return { description: rawContent, fullPrompt, rawContent };
 };
 
 
@@ -171,5 +275,7 @@ module.exports = {
   generateChatCompletion,
   generateBookTitles,
   generateBookDescription,
+  generateBookChapters,
+  generateBookCoverPrompt,
   OpenAIParseError
 };
