@@ -34,62 +34,86 @@ const createLocation = async (locationData) => {
  */
 const getAllLocations = async (options = {}) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'createdAt',
-      order = 'desc',
-      search = '',
-      category = '',
-      country = '',
-      isActive = ''
-    } = options;
+    const page = parseInt(options.page, 10) || 1;
+    const limit = parseInt(options.limit, 10) || 10;
+    const sortWhitelist = ['createdAt', 'name', 'usage_count'];
+    const sort = sortWhitelist.includes(options.sort) ? options.sort : 'createdAt';
+    const order = options.order === 'asc' ? 1 : -1;
+    const { search = '', category = '', country = '', isActive = '' } = options;
 
-    // Build query
-    const query = {};
-    
+    const matchQuery = {};
     if (search) {
-      query.$or = [
+      matchQuery.$or = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { country: { $regex: search, $options: 'i' } }
       ];
     }
-
     if (category) {
-      query.category = category;
+      matchQuery.category = category;
     }
-
     if (country) {
-      query.country = { $regex: country, $options: 'i' };
+      matchQuery.country = { $regex: country, $options: 'i' };
     }
-
     if (isActive !== '') {
-      query.isActive = isActive === 'true';
+      matchQuery.isActive = isActive === 'true';
     }
 
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
-
-    // Execute query with pagination
     const skip = (page - 1) * limit;
-    
-    const [locations, total] = await Promise.all([
-      Location.find(query)
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit),
-      Location.countDocuments(query)
-    ]);
+    let locations;
+    let total;
+
+    if (sort === 'usage_count') {
+      const pipeline = [
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'books',
+            localField: '_id',
+            foreignField: 'locations',
+            as: 'books'
+          }
+        },
+        {
+          $addFields: {
+            usage_count: { $size: '$books' }
+          }
+        },
+        { $sort: { [sort]: order } },
+        {
+          $facet: {
+            results: [
+              { $skip: skip },
+              { $limit: limit },
+              { $project: { books: 0, __v: 0 } }
+            ],
+            totalCount: [{ $count: 'count' }]
+          }
+        }
+      ];
+
+      const result = await Location.aggregate(pipeline);
+      locations = result[0].results;
+      total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
+    } else {
+      const [locationDocs, totalDocs] = await Promise.all([
+        Location.find(matchQuery)
+          .sort({ [sort]: order })
+          .skip(skip)
+          .limit(limit),
+        Location.countDocuments(matchQuery)
+      ]);
+      total = totalDocs;
+      locations = locationDocs.map(doc => doc.getPublicProfile());
+    }
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      results: locations.map(location => location.getPublicProfile()),
+      results: locations,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total,
         totalPages,
         hasNext: page < totalPages,

@@ -2,6 +2,7 @@ const Author = require('../models/authorModel');
 const logger = require('../utils/logger');
 const Genre = require('../models/genreModel');
 const ApiError = require('../utils/ApiError');
+const mongoose = require('mongoose');
 
 /**
  * Create a new author
@@ -43,58 +44,85 @@ const createAuthor = async (authorData) => {
  */
 const getAllAuthors = async (options = {}) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'createdAt',
-      order = 'desc',
-      search = '',
-      genre = '',
-      isActive = ''
-    } = options;
+    const page = parseInt(options.page, 10) || 1;
+    const limit = parseInt(options.limit, 10) || 10;
+    const sortWhitelist = ['createdAt', 'authorName', 'usage_count'];
+    const sort = sortWhitelist.includes(options.sort) ? options.sort : 'createdAt';
+    const order = options.order === 'asc' ? 1 : -1;
+    const { search = '', genre = '', isActive = '' } = options;
 
-    // Build query
-    const query = {};
-
+    const matchQuery = {};
     if (search) {
-      query.$or = [
+      matchQuery.$or = [
         { authorName: { $regex: search, $options: 'i' } },
         { writingStyle: { $regex: search, $options: 'i' } },
         { designStyle: { $regex: search, $options: 'i' } }
       ];
     }
-
     if (isActive !== '') {
-      query.isActive = isActive === 'true';
+      matchQuery.isActive = isActive === 'true';
     }
-
     if (genre) {
-      query.genre = genre;
+      matchQuery.genre = new mongoose.Types.ObjectId(genre);
     }
 
-    // Calculate skip value
     const skip = (page - 1) * limit;
+    let authors;
+    let total;
 
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
+    if (sort === 'usage_count') {
+      const pipeline = [
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'books',
+            localField: '_id',
+            foreignField: 'authors',
+            as: 'books'
+          }
+        },
+        {
+          $addFields: {
+            usage_count: { $size: '$books' }
+          }
+        },
+        { $sort: { [sort]: order } },
+        {
+          $facet: {
+            results: [
+              { $skip: skip },
+              { $limit: limit },
+              {
+                $lookup: {
+                  from: 'genres',
+                  localField: 'genre',
+                  foreignField: '_id',
+                  as: 'genre'
+                }
+              },
+              { $unwind: '$genre' },
+              { $project: { books: 0, __v: 0, 'genre.__v': 0 } }
+            ],
+            totalCount: [{ $count: 'count' }]
+          }
+        }
+      ];
 
-    // Execute query
-    const authors = await Author.find(query)
-      .populate('genre', 'title')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limit);
+      const result = await Author.aggregate(pipeline);
+      authors = result[0].results;
+      total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
+    } else {
+      [authors, total] = await Promise.all([
+        Author.find(matchQuery)
+          .populate('genre', 'title')
+          .sort({ [sort]: order })
+          .skip(skip)
+          .limit(limit),
+        Author.countDocuments(matchQuery)
+      ]);
+    }
 
-    // Get total count
-    const total = await Author.countDocuments(query);
-
-    // Calculate pagination info
     const totalPages = Math.ceil(total / limit);
-    const hasNext = page < totalPages;
-    const hasPrev = page > 1;
-
-    logger.info(`Retrieved ${authors.length} authors`);
 
     return {
       results: authors,
@@ -103,8 +131,8 @@ const getAllAuthors = async (options = {}) => {
         limit,
         total,
         totalPages,
-        hasNext,
-        hasPrev
+        hasNext: page < totalPages,
+        hasPrev: page > 1
       }
     };
   } catch (error) {

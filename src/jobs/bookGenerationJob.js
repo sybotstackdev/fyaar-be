@@ -172,17 +172,27 @@ const processBookDescriptionGeneration = async (bookId) => {
 
         await book.updateOne({ 'generationStatus.description.status': 'in_progress' }, { session });
 
-        const variants = book.genres?.[0]?.variants;
-        let randomVariant = '';
+        const genre = book.genres?.[0];
+        const variants = genre?.variants;
+
+
+        let randomVariantName = '';
+        let randomVariantId = null;
+
         if (variants && variants.length > 0) {
             const randomIndex = Math.floor(Math.random() * variants.length);
-            randomVariant = variants[randomIndex].name;
+            const selectedVariant = variants[randomIndex];
+            
+            if (selectedVariant && selectedVariant.name) {
+                randomVariantName = selectedVariant.name;
+                randomVariantId = selectedVariant._id;
+            }
         }
 
         const promptData = {
             title: book.title,
-            genre: book.genres?.[0]?.description ?? '',
-            variant: randomVariant || '',
+            genre: genre?.description ?? '',
+            variant: randomVariantName,
             location: '',
             characters: '',
             trope_description: book.plots?.[0]?.description ?? '',
@@ -198,6 +208,7 @@ const processBookDescriptionGeneration = async (bookId) => {
             content: description,
             promptUsed: fullPrompt,
             rawApiResponse: rawContent,
+            variantUsed: randomVariantId,
             source: 'OpenAI-o3-mini'
         }], { session });
 

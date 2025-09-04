@@ -35,51 +35,79 @@ const createSpiceLevel = async (spiceLevelData) => {
  */
 const getAllSpiceLevels = async (options = {}) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'createdAt',
-      order = 'desc',
-      search = '',
-      isActive = ''
-    } = options;
+    const page = parseInt(options.page, 10) || 1;
+    const limit = parseInt(options.limit, 10) || 10;
+    const sortWhitelist = ['createdAt', 'comboName', 'usage_count'];
+    const sort = sortWhitelist.includes(options.sort) ? options.sort : 'createdAt';
+    const order = options.order === 'asc' ? 1 : -1;
+    const { search = '', isActive = '' } = options;
 
-    // Build query
-    const query = {};
-
+    const matchQuery = {};
     if (search) {
-      query.$or = [
+      matchQuery.$or = [
         { comboName: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
     }
-
     if (isActive !== '') {
-      query.isActive = isActive === 'true';
+      matchQuery.isActive = isActive === 'true';
     }
 
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
-
-    // Execute query with pagination
     const skip = (page - 1) * limit;
+    let spiceLevels;
+    let total;
 
-    const [spiceLevels, total] = await Promise.all([
-      SpiceLevel.find(query)
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit),
-      SpiceLevel.countDocuments(query)
-    ]);
+    if (sort === 'usage_count') {
+      const pipeline = [
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'books',
+            localField: '_id',
+            foreignField: 'spiceLevels',
+            as: 'books'
+          }
+        },
+        {
+          $addFields: {
+            usage_count: { $size: '$books' }
+          }
+        },
+        { $sort: { [sort]: order } },
+        {
+          $facet: {
+            results: [
+              { $skip: skip },
+              { $limit: limit },
+              { $project: { books: 0, __v: 0 } }
+            ],
+            totalCount: [{ $count: 'count' }]
+          }
+        }
+      ];
+
+      const result = await SpiceLevel.aggregate(pipeline);
+      spiceLevels = result[0].results;
+      total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
+    } else {
+      const [spiceLevelDocs, totalDocs] = await Promise.all([
+        SpiceLevel.find(matchQuery)
+          .sort({ [sort]: order })
+          .skip(skip)
+          .limit(limit),
+        SpiceLevel.countDocuments(matchQuery)
+      ]);
+      total = totalDocs;
+      spiceLevels = spiceLevelDocs.map(doc => doc.getPublicProfile());
+    }
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      results: spiceLevels.map(spiceLevel => spiceLevel.getPublicProfile()),
+      results: spiceLevels,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total,
         totalPages,
         hasNext: page < totalPages,

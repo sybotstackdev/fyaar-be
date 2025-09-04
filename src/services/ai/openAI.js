@@ -143,8 +143,8 @@ Follow these rules strictly:
 title: ${title}
 genre: ${genre}
 variant: ${variant}
-location: ${location || ''}
-characters: ${JSON.stringify(characters || '')}
+location: ${location || ""}
+characters: ${JSON.stringify(characters || "")} // if missing, use trope names; if none, use roles/professions
 trope_description: ${trope_description}
 chapter_summaries: ${chapter_summaries}
 

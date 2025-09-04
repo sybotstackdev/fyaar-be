@@ -34,51 +34,79 @@ const createNarrative = async (narrativeData) => {
  */
 const getAllNarratives = async (options = {}) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'createdAt',
-      order = 'desc',
-      search = '',
-      isActive = ''
-    } = options;
+    const page = parseInt(options.page, 10) || 1;
+    const limit = parseInt(options.limit, 10) || 10;
+    const sortWhitelist = ['createdAt', 'optionLabel', 'usage_count'];
+    const sort = sortWhitelist.includes(options.sort) ? options.sort : 'createdAt';
+    const order = options.order === 'asc' ? 1 : -1;
+    const { search = '', isActive = '' } = options;
 
-    // Build query
-    const query = {};
-    
+    const matchQuery = {};
     if (search) {
-      query.$or = [
+      matchQuery.$or = [
         { optionLabel: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
     }
-
     if (isActive !== '') {
-      query.isActive = isActive === 'true';
+      matchQuery.isActive = isActive === 'true';
     }
 
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
-
-    // Execute query with pagination
     const skip = (page - 1) * limit;
-    
-    const [narratives, total] = await Promise.all([
-      Narrative.find(query)
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit),
-      Narrative.countDocuments(query)
-    ]);
+    let narratives;
+    let total;
+
+    if (sort === 'usage_count') {
+      const pipeline = [
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'books',
+            localField: '_id',
+            foreignField: 'narrative',
+            as: 'books'
+          }
+        },
+        {
+          $addFields: {
+            usage_count: { $size: '$books' }
+          }
+        },
+        { $sort: { [sort]: order } },
+        {
+          $facet: {
+            results: [
+              { $skip: skip },
+              { $limit: limit },
+              { $project: { books: 0, __v: 0 } }
+            ],
+            totalCount: [{ $count: 'count' }]
+          }
+        }
+      ];
+
+      const result = await Narrative.aggregate(pipeline);
+      narratives = result[0].results;
+      total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
+    } else {
+      const [narrativeDocs, totalDocs] = await Promise.all([
+        Narrative.find(matchQuery)
+          .sort({ [sort]: order })
+          .skip(skip)
+          .limit(limit),
+        Narrative.countDocuments(matchQuery)
+      ]);
+      total = totalDocs;
+      narratives = narrativeDocs.map(doc => doc.getPublicProfile());
+    }
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      results: narratives.map(narrative => narrative.getPublicProfile()),
+      results: narratives,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total,
         totalPages,
         hasNext: page < totalPages,

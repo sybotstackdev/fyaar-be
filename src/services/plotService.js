@@ -1,6 +1,7 @@
 const Plot = require('../models/plotModel');
 const Genre = require('../models/genreModel');
 const logger = require('../utils/logger');
+const mongoose = require('mongoose');
 
 /**
  * Create a new plot
@@ -36,57 +37,90 @@ const createPlot = async (plotData) => {
  */
 const getAllPlots = async (options = {}) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'createdAt',
-      order = 'desc',
-      search = '',
-      genre = '',
-      isActive = ''
-    } = options;
+    const page = parseInt(options.page, 10) || 1;
+    const limit = parseInt(options.limit, 10) || 10;
+    const sortWhitelist = ['createdAt', 'title', 'usage_count'];
+    const sort = sortWhitelist.includes(options.sort) ? options.sort : 'createdAt';
+    const order = options.order === 'asc' ? 1 : -1;
+    const { search = '', genre = '', isActive = '' } = options;
 
-    // Build query
-    const query = {};
-    
+    const matchQuery = {};
     if (search) {
-      query.$or = [
+      matchQuery.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
     }
-
-    if (genre) {
-      query.genre = genre;
-    }
-
     if (isActive !== '') {
-      query.isActive = isActive === 'true';
+      matchQuery.isActive = isActive === 'true';
+    }
+    if (genre) {
+      matchQuery.genre = new mongoose.Types.ObjectId(genre);
     }
 
-    // Calculate skip value
     const skip = (page - 1) * limit;
+    let plots;
+    let total;
 
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
+    if (sort === 'usage_count') {
+      const pipeline = [
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'books',
+            localField: '_id',
+            foreignField: 'plots',
+            as: 'books'
+          }
+        },
+        {
+          $addFields: {
+            usage_count: { $size: '$books' }
+          }
+        },
+        { $sort: { [sort]: order } },
+        {
+          $facet: {
+            results: [
+              { $skip: skip },
+              { $limit: limit },
+              {
+                $lookup: {
+                  from: 'genres',
+                  localField: 'genre',
+                  foreignField: '_id',
+                  as: 'genre'
+                }
+              },
+              { $unwind: '$genre' },
+              { $project: { books: 0, __v: 0, 'genre.__v': 0 } }
+            ],
+            totalCount: [{ $count: 'count' }]
+          }
+        }
+      ];
 
-    // Execute query
-    const plots = await Plot.find(query)
-      .populate('genre', 'title')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(parseInt(limit));
+      const result = await Plot.aggregate(pipeline);
+      plots = result[0].results;
+      total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
+    } else {
+      if (matchQuery.genre) {
+        matchQuery.genre = genre;
+      }
+      
+      const [plotDocs, totalDocs] = await Promise.all([
+        Plot.find(matchQuery)
+          .populate('genre', 'title')
+          .sort({ [sort]: order })
+          .skip(skip)
+          .limit(limit),
+        Plot.countDocuments(matchQuery)
+      ]);
+      total = totalDocs;
+      plots = plotDocs.map(doc => doc.getPublicProfile());
+    }
 
-    // Get total count
-    const total = await Plot.countDocuments(query);
-
-    // Calculate pagination info
     const totalPages = Math.ceil(total / limit);
-    const hasNext = page < totalPages;
-    const hasPrev = page > 1;
-
-    logger.info(`Retrieved ${plots.length} plots`);
 
     return {
       results: plots,
@@ -95,8 +129,8 @@ const getAllPlots = async (options = {}) => {
         limit,
         total,
         totalPages,
-        hasNext,
-        hasPrev
+        hasNext: page < totalPages,
+        hasPrev: page > 1
       }
     };
   } catch (error) {

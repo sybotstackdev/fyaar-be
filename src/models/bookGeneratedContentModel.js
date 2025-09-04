@@ -19,10 +19,14 @@ const bookGeneratedContentSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    variantUsed: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'GenreVariant',
+        default: null
+    },
     content: {
         type: String,
         default: '',
-        // required: true
     },
     titles: [{
         title: { type: String, required: true },
