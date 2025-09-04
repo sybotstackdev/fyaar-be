@@ -27,9 +27,9 @@ jobs:
 
           cd ~/fyaar-backend
 
-          echo "Pulling latest code.."
-          git pull origin master
-
+          echo "Resetting repo to latest master.."
+          git fetch origin
+          git reset --hard origin/master
 
           echo "Stopping old containers.."
           sudo docker-compose down
