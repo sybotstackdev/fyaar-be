@@ -1,14 +1,14 @@
-# Use an official Node.js runtime as a parent image
-FROM node:16
+# Use Node.js 20 LTS (compatible with sharp)
+FROM node:20
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json first (for caching)
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --production
 
 # Copy the rest of the application
 COPY . .
@@ -16,6 +16,7 @@ COPY . .
 # Expose the application port
 EXPOSE 3000
 
-# Define the command to run the app
+# Start the app
 CMD ["npm", "start"]
+
 
