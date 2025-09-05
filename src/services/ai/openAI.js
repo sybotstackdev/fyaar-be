@@ -2,6 +2,7 @@ require('dotenv').config();
 const OpenAI = require('openai');
 const logger = require('../../utils/logger');
 const ApiError = require('../../utils/ApiError');
+const instructionModel = require('../../models/instructionModel');
 
 class OpenAIParseError extends ApiError {
   constructor(message, prompt, rawResponse) {
@@ -61,7 +62,8 @@ const generateChatCompletion = async (systemPrompt, userPrompt, model = 'o3-mini
  * @returns {Promise<Object>} A promise that resolves to an object with categorized book titles.
  */
 const generateBookTitles = async (storyDescription, genreLayer) => {
-  const systemPrompt = `You are a professional publishing assistant. Follow these universal rules strictly for book title
+  const prompt = await instructionModel.findOne({ name: "BookTitle" })
+  const systemPrompt = prompt?.instructions || `You are a professional publishing assistant. Follow these universal rules strictly for book title
 generation:
 - Titles must be original: do not duplicate or closely copy famous books, films, or TV brands.
 - No profanity, sexual slang, graphic violence, or extreme kinks in titles.
@@ -127,8 +129,9 @@ verandas, trains, courtyards, mango, chai) but keep wording universal/internatio
  */
 const generateBookDescription = async (promptData) => {
   const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
+  const prompt = await instructionModel.findOne({ name: "BookDescription" })
 
-  const systemPrompt = `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
+  const systemPrompt = prompt?.instructions || `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
 Follow these rules strictly:
 - All characters must be 21+ (no minors).
 - No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, or porn-industry settings.
@@ -173,8 +176,8 @@ HARD RULES
  */
 const generateBookChapters = async (promptData) => {
   const { title, trope_name, trope_description, chapter_beats, narrative, spice_level, ending_type, location, characters } = promptData;
-
-  const systemPrompt = `SYSTEM: ROMANCE SHORT STORY ENGINE — CHAPTER GENERATION
+  const prompt = await instructionModel.findOne({ name: "BookChapters" })
+  const systemPrompt =prompt?.instructions || `SYSTEM: ROMANCE SHORT STORY ENGINE — CHAPTER GENERATION
 
 You are a professional romance author creating immersive, emotionally intense stories for an international audience.
 Follow these universal rules strictly:
