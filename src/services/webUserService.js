@@ -82,7 +82,13 @@ const getAllUsers = async (options = {}) => {
       totalPages,
       totalUsers: total,
       hasNextPage: page < totalPages,
-      hasPrevPage: page > 1
+      hasPrevPage: page > 1,
+      limit,
+      nextPage: page < totalPages ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
+      startIndex: skip + 1,
+      endIndex: Math.min(skip + limit, total),
+      showing: `${skip + 1}-${Math.min(skip + limit, total)} of ${total}`
     }
   };
 };
@@ -159,14 +165,75 @@ const deleteUser = async (userId) => {
 };
 
 /**
- * Get users by status
+ * Get users by status with pagination
  * @param {string} status - Registration status
  * @param {Object} options - Query options
- * @returns {Promise<Object>} Users data
+ * @returns {Promise<Object>} Users data with pagination info
  */
 const getUsersByStatus = async (status, options = {}) => {
-  const users = await WebUser.getByStatus(status, options);
-  return users.map(user => user.getPublicProfile());
+  const {
+    page = 1,
+    limit = 10,
+    sort = 'createdAt',
+    order = 'desc'
+  } = options;
+
+  const skip = (page - 1) * limit;
+  const sortOrder = order === 'desc' ? -1 : 1;
+
+  // Build query
+  const query = { registrationStatus: status };
+
+  // Execute query with pagination
+  const [users, total] = await Promise.all([
+    WebUser.find(query)
+      .sort({ [sort]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    WebUser.countDocuments(query)
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    users: users.map(user => {
+      // Create a public profile for each user
+      const { _id, fullName, email, penName, ageGroup, languages, experienceLevel, 
+              publishedBefore, contentTypes, genres, readyContent, monthlyOutput, 
+              registrationStatus, createdAt, updatedAt } = user;
+      return {
+        _id,
+        fullName,
+        email,
+        penName,
+        ageGroup,
+        languages,
+        experienceLevel,
+        publishedBefore,
+        contentTypes,
+        genres,
+        readyContent,
+        monthlyOutput,
+        registrationStatus,
+        createdAt,
+        updatedAt
+      };
+    }),
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalUsers: total,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      limit,
+      nextPage: page < totalPages ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
+      startIndex: skip + 1,
+      endIndex: Math.min(skip + limit, total),
+      showing: `${skip + 1}-${Math.min(skip + limit, total)} of ${total}`
+    }
+  };
 };
 
 /**
