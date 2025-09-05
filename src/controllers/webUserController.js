@@ -143,7 +143,7 @@ const getUsersByStatus = asyncHandler(async (req, res) => {
   const { status } = req.params;
   const { page, limit, sort, order } = req.query;
 
-  const users = await WebUserService.getUsersByStatus(status, {
+  const result = await WebUserService.getUsersByStatus(status, {
     page: parseInt(page) || 1,
     limit: parseInt(limit) || 10,
     sort: sort || 'createdAt',
@@ -151,10 +151,10 @@ const getUsersByStatus = asyncHandler(async (req, res) => {
   });
 
   return ApiResponse.success(res, 200, `Users with status '${status}' retrieved successfully`, {
-    users,
+    ...result,
     status: 'success',
     filterStatus: status,
-    count: users.length
+    totalCount: result.pagination.totalUsers
   });
 });
 

@@ -102,7 +102,7 @@ const getContactsByStatus = asyncHandler(async (req, res) => {
   const { status } = req.params;
   const { page, limit, sort, order } = req.query;
 
-  const contacts = await ContactService.getContactsByStatus(status, {
+  const result = await ContactService.getContactsByStatus(status, {
     page: parseInt(page) || 1,
     limit: parseInt(limit) || 10,
     sort: sort || 'createdAt',
@@ -110,10 +110,10 @@ const getContactsByStatus = asyncHandler(async (req, res) => {
   });
 
   return ApiResponse.success(res, 200, `Contact messages with status '${status}' retrieved successfully`, {
-    contacts,
+    ...result,
     status: 'success',
     filterStatus: status,
-    count: contacts.length
+    totalCount: result.pagination.totalContacts
   });
 });
 

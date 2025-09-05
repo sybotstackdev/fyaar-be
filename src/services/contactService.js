@@ -86,7 +86,12 @@ const getAllContacts = async (options = {}) => {
         totalContacts,
         hasNextPage,
         hasPrevPage,
-        limit
+        limit,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+        startIndex: skip + 1,
+        endIndex: Math.min(skip + limit, totalContacts),
+        showing: `${skip + 1}-${Math.min(skip + limit, totalContacts)} of ${totalContacts}`
       }
     };
   } catch (error) {
@@ -172,10 +177,10 @@ const deleteContact = async (contactId) => {
 };
 
 /**
- * Get contacts by status
+ * Get contacts by status with pagination
  * @param {string} status - Contact status
  * @param {Object} options - Query options
- * @returns {Promise<Array>} Contact messages
+ * @returns {Promise<Object>} Contact messages with pagination info
  */
 const getContactsByStatus = async (status, options = {}) => {
   try {
@@ -187,14 +192,39 @@ const getContactsByStatus = async (status, options = {}) => {
     } = options;
 
     const skip = (page - 1) * limit;
+    const sortOrder = order === 'desc' ? -1 : 1;
 
-    const contacts = await Contact.find({ status })
-      .sort({ [sort]: order === 'desc' ? -1 : 1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // Build query
+    const query = { status };
 
-    return contacts;
+    // Execute query with pagination
+    const [contacts, total] = await Promise.all([
+      Contact.find(query)
+        .sort({ [sort]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Contact.countDocuments(query)
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      contacts,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalContacts: total,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        limit,
+        nextPage: page < totalPages ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null,
+        startIndex: skip + 1,
+        endIndex: Math.min(skip + limit, total),
+        showing: `${skip + 1}-${Math.min(skip + limit, total)} of ${total}`
+      }
+    };
   } catch (error) {
     logger.error('Error getting contacts by status:', error);
     throw new ApiError(500, 'Failed to retrieve contacts by status');
