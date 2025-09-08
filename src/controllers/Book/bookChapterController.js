@@ -22,9 +22,15 @@ const deleteChapter = asyncHandler(async (req, res) => {
     return ApiResponse.success(res, 200, 'Chapter deleted successfully');
 });
 
+const generateAndUpdateChapters = asyncHandler(async (req, res) => {
+    const updated = await BookChapterService.updateBookChapters(req.params.id);
+    return ApiResponse.success(res, 200, 'Book description regenerated and updated successfully', updated);
+});
+
 module.exports = {
     createChapter,
     getChapterById,
     updateChapter,
-    deleteChapter
+    deleteChapter,
+    generateAndUpdateChapters
 };
