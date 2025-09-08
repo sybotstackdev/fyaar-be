@@ -21,6 +21,27 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Helper to extract instruction text from new Instruction schema
+// Looks for an item with instructionName matching role (e.g., 'system' or 'user')
+// Falls back to concatenating all instructionValue entries if specific role not found
+const extractInstructionText = (doc, role) => {
+  try {
+    if (!doc || !Array.isArray(doc.instructions)) return '';
+    const match = doc.instructions.find(i =>
+      typeof i?.instructionName === 'string' && i.instructionName.toLowerCase() === String(role).toLowerCase()
+    );
+    if (match && typeof match.instructionValue === 'string') {
+      return match.instructionValue.trim();
+    }
+    return doc.instructions
+      .map(i => (typeof i?.instructionValue === 'string' ? i.instructionValue.trim() : ''))
+      .filter(Boolean)
+      .join('\n');
+  } catch (_) {
+    return '';
+  }
+};
+
 /**
  * Generate a chat completion using OpenAI.
  * @param {string} systemPrompt - The system prompt defining the assistant's behavior.
@@ -62,8 +83,8 @@ const generateChatCompletion = async (systemPrompt, userPrompt, model = 'o3-mini
  * @returns {Promise<Object>} A promise that resolves to an object with categorized book titles.
  */
 const generateBookTitles = async (storyDescription, genreLayer) => {
-  const prompt = await instructionModel.findOne({ name: "BookTitle" })
-  const systemPrompt = prompt?.instructions || `You are a professional publishing assistant. Follow these universal rules strictly for book title
+  const prompt = await instructionModel.findOne({ name: "Book Title" })
+  const systemPrompt = extractInstructionText(prompt, 'BookTitleSystem') || `You are a professional publishing assistant. Follow these universal rules strictly for book title
 generation:
 - Titles must be original: do not duplicate or closely copy famous books, films, or TV brands.
 - No profanity, sexual slang, graphic violence, or extreme kinks in titles.
@@ -75,32 +96,14 @@ caste identities, politics, or nationalism.
 legend, silent, girl, missing.
 - Titles must remain under 5 words and follow the exact output format requested.`;
 
-  const userPrompt = `You are a professional book-naming editor specializing in international romance and women’s
-fiction.
+  const userPrompt = `
+  ${extractInstructionText(prompt, 'BookTitleUser')}
 INPUT
 STORY_DESCRIPTION: ${storyDescription}
-GENRE_LAYER: ${genreLayer}
-TASK
-Step 1 (internal): Extract motifs, emotional themes, and unique phrases. Do not output this step.
-Step 2: Generate 9 book titles divided into 3 categories:
-1) poetic_metaphorical → lyrical, image-driven, emotional (≤4 words)
-2) conversational_modern → casual, quotable, playful (≤4 words)
-3) ironic_bittersweet → paradoxical or layered tone (≤4 words)
-OUTPUT FORMAT
-{
-"poetic_metaphorical": ["t1", "t2", "t3"],
-"conversational_modern": ["t4", "t5", "t6"],
-"ironic_bittersweet": ["t7", "t8", "t9"]
-}
-HARD RULES
-- Keep every title under 5 words.
-- Do not use restricted words listed in system rules.
-- Each title must have distinct rhythm/structure (avoid repeating “The [Noun] of [Noun]”).
-- Titles should align with GENRE_LAYER while still appealing to contemporary
-romance/women’s fiction readers (think Colleen Hoover, Emily Henry, Taylor Jenkins Reid, Sally
-Rooney).
-- Cultural sensitivity required; optional subtle Indian-English imagery is allowed (monsoon,
-verandas, trains, courtyards, mango, chai) but keep wording universal/international.`;
+GENRE_LAYER: ${genreLayer}`;
+
+  console.log('User prompt (Book Title):');
+  console.log(userPrompt);
 
   const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
   const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
@@ -129,9 +132,9 @@ verandas, trains, courtyards, mango, chai) but keep wording universal/internatio
  */
 const generateBookDescription = async (promptData) => {
   const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
-  const prompt = await instructionModel.findOne({ name: "BookDescription" })
+  const prompt = await instructionModel.findOne({ name: "Book Description" })
 
-  const systemPrompt = prompt?.instructions || `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
+  const systemPrompt = extractInstructionText(prompt, 'BookDescriptionSystem') || `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
 Follow these rules strictly:
 - All characters must be 21+ (no minors).
 - No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, or porn-industry settings.
@@ -142,7 +145,8 @@ Follow these rules strictly:
 - No meta commentary, filler text, or author notes.
 - No breaking format: return output exactly as instructed.`;
 
-  const userPrompt = `INPUT
+  const userPrompt = `
+INPUT
 title: ${title}
 genre: ${genre}
 variant: ${variant}
@@ -151,17 +155,11 @@ characters: ${JSON.stringify(characters || "")} // if missing, use trope names; 
 trope_description: ${trope_description}
 chapter_summaries: ${chapter_summaries}
 
-TASK
-Step 1 (internal): Extract conflict, romantic tension, emotional stakes, motifs, and character dynamics. Weave in location if provided (1–2 times). Do not output this step.
-Step 2: Write ONE description (~100 words) in the specified variant style.
+${extractInstructionText(prompt, 'BookDescriptionUser')}
+`;
 
-HARD RULES
-- Length: ~100 words, no labels or numbering.
-- Use provided or fallback character names naturally (2–3 mentions max).
-- Mention location (if provided) 1–2 times max.
-- Do not reveal chapter structure, POV, or spice level.
-- Do not spoil the ending.
-- Output only the description, nothing else.`;
+  console.log('User prompt (Book Description):');
+  console.log(userPrompt);
 
   const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
   const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
@@ -176,8 +174,8 @@ HARD RULES
  */
 const generateBookChapters = async (promptData) => {
   const { title, trope_name, trope_description, chapter_beats, narrative, spice_level, ending_type, location, characters } = promptData;
-  const prompt = await instructionModel.findOne({ name: "BookChapters" })
-  const systemPrompt =prompt?.instructions || `SYSTEM: ROMANCE SHORT STORY ENGINE — CHAPTER GENERATION
+  const prompt = await instructionModel.findOne({ name: "Book Chapters" })
+  const systemPrompt = extractInstructionText(prompt, 'BookChaptersSystem') || `SYSTEM: ROMANCE SHORT STORY ENGINE — CHAPTER GENERATION
 
 You are a professional romance author creating immersive, emotionally intense stories for an international audience.
 Follow these universal rules strictly:
@@ -201,30 +199,10 @@ ending_type: ${ending_type}
 location: ${location || ''}
 characters: ${JSON.stringify(characters) || '""'} # if absent, use trope names; if none, assign natural names and keep consistent
 
-SPECIFICATIONS
-- Chapters: 3 (long-form, immersive)
-- Length: 5000–9000 characters each (~1000–1500 words)
-- Follow pov_pattern per chapter_beats
-- Apply spice_level with explicit consent and aftercare where required
-- Maintain strict continuity of names, setting, timeline, and world details across chapters
+${extractInstructionText(prompt, 'BookChaptersUser')}`;
 
-TASK
-Write all 3 chapters in sequence. Each chapter must:
-- Start with a short *tagline* (sets mood).
-- Follow the assigned POV for that chapter.
-- Include intimacy per the spice baseline; step down one level if continuity or consent would break.
-- End with a *cliffhanger or resolution line* that fits the ending_type.
-- Flow naturally into the next chapter.
-
-OUTPUT FORMAT
-Return ONLY valid JSON. Do not include markdown fences, commentary, or labels.
-{
-  "chapters": [
-    { "title": "string", "tagline": "string", "prose": "string" },
-    { "title": "string", "tagline": "string", "prose": "string" },
-    { "title": "string", "tagline": "string", "prose": "string" }
-  ]
-}`;
+  console.log('User prompt (Book Chapters):');
+  console.log(userPrompt);
 
   const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
   const rawContent = await generateChatCompletion(systemPrompt, userPrompt);

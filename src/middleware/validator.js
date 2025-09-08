@@ -339,9 +339,18 @@ const validateInstruction = [
     .withMessage('Instruction name must be at least 2 characters'),
 
   body('instructions')
+    .isArray({ min: 1 })
+    .withMessage('Instructions must be a non-empty array'),
+
+  body('instructions.*.instructionName')
     .trim()
-    .isLength({ min: 2 })
-    .withMessage('Instructions must be at least 2 characters'),
+    .isLength({ min: 1 })
+    .withMessage('Each instruction requires instructionName'),
+
+  body('instructions.*.instructionValue')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Each instruction requires instructionValue'),
 
   handleValidationErrors
 ];

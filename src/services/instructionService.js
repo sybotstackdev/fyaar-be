@@ -49,7 +49,8 @@ const getAllInstructions = async (options = {}) => {
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { instructions: { $regex: search, $options: 'i' } }
+        { 'instructions.instructionName': { $regex: search, $options: 'i' } },
+        { 'instructions.instructionValue': { $regex: search, $options: 'i' } }
       ];
     }
 

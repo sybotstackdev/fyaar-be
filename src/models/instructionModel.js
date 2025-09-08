@@ -6,11 +6,30 @@ const instructionSchema = new mongoose.Schema({
     required: [true, 'Instruction name is required'],
     trim: true
   },
-  instructions: {
-    type: String,
-    required: [true, 'Instructions are required'],
-    trim: true,
-  },
+  instructions: [{
+    instructionName : {
+      type: String,
+      required: [true, 'Instruction name is required'],
+      trim: true
+    },
+    instructionValue : {
+      type: String,
+      required: [true, 'Instruction value is required'],
+      trim: true
+    },
+    instructionInput : {
+      type: String,
+      default: ""
+    },
+    createdAt : {
+      type: Date,
+      default: Date.now
+    },
+    updatedAt : {
+      type: Date,
+      default: Date.now
+    }
+  }],
   isActive: {
     type: Boolean,
     default: true
