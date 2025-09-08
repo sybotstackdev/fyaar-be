@@ -36,7 +36,7 @@ router.post('/web/contact',
 // Get all contact messages with pagination and filtering
 router.get('/web/contact',
   authenticate,
-  authorize(['admin']),
+  authorize('admin'),
   validateContactPagination,
   getAllContacts
 );
@@ -44,7 +44,7 @@ router.get('/web/contact',
 // Get specific contact by ID
 router.get('/web/contact/:id',
   authenticate,
-  authorize(['admin']),
+  authorize('admin'),
   validateContactId,
   getContactById
 );
@@ -52,7 +52,7 @@ router.get('/web/contact/:id',
 // Update contact status
 router.put('/web/contact/:id/status',
   authenticate,
-  authorize(['admin']),
+  authorize('admin'),
   validateContactId,
   validateContactStatusUpdate,
   updateContactStatus
@@ -61,7 +61,7 @@ router.put('/web/contact/:id/status',
 // Delete contact message
 router.delete('/web/contact/:id',
   authenticate,
-  authorize(['admin']),
+  authorize('admin'),
   validateContactId,
   deleteContact
 );
@@ -69,7 +69,7 @@ router.delete('/web/contact/:id',
 // Get contacts by status
 router.get('/web/contact/status/:status',
   authenticate,
-  authorize(['admin']),
+  authorize('admin'),
   validateStatusParam,
   validateContactPagination,
   getContactsByStatus
@@ -78,7 +78,7 @@ router.get('/web/contact/status/:status',
 // Get contact statistics
 router.get('/web/contact/stats',
   authenticate,
-  authorize(['admin']),
+  authorize('admin'),
   getContactStats
 );
 
