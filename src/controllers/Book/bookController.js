@@ -87,6 +87,16 @@ const updateBookCover = asyncHandler(async (req, res) => {
     return ApiResponse.success(res, 200, 'Book cover updated successfully', response);
 });
 
+    const generateAndUpdateTitle = asyncHandler(async (req, res) => {
+        const updated = await BookService.generateAndUpdateTitle(req.params.id);
+        return ApiResponse.success(res, 200, 'Book title regenerated and updated successfully', updated);
+    });
+
+    const generateAndUpdateDescription = asyncHandler(async (req, res) => {
+        const updated = await BookService.updateBookDescription(req.params.id);
+        return ApiResponse.success(res, 200, 'Book description regenerated and updated successfully', updated);
+    });
+
 module.exports = {
     createBook,
     getAllBooks,
@@ -97,5 +107,7 @@ module.exports = {
     getChaptersByBook,
     reorderBookChapters,
     uploadBookCover,
-    updateBookCover
+    updateBookCover,
+    generateAndUpdateTitle,
+    generateAndUpdateDescription
 };

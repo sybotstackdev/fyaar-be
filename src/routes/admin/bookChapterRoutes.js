@@ -3,7 +3,8 @@ const {
     createChapter,
     getChapterById,
     updateChapter,
-    deleteChapter
+    deleteChapter,
+    generateAndUpdateChapters
 } = require('../../controllers/Book/bookChapterController');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
@@ -41,6 +42,13 @@ router.delete('/:id',
     authorize('admin'),
     validateObjectId,
     deleteChapter
+);
+
+router.put('/:id/generate-chapters',
+    authenticate,
+    authorize('admin'),
+    validateObjectId,
+    generateAndUpdateChapters
 );
 
 module.exports = router;

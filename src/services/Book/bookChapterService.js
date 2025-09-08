@@ -1,6 +1,9 @@
 const BookChapter = require('../../models/bookChapterModel');
 const Book = require('../../models/bookModel');
 const logger = require('../../utils/logger');
+const { generateBookChapters } = require('../ai/openAI');
+const BookGeneratedContent  = require("../../models/bookGeneratedContentModel.js");
+const { default: mongoose } = require('mongoose');
 
 const createChapter = async (chapterData) => {
     try {
@@ -121,11 +124,119 @@ const deleteChapter = async (chapterId) => {
     }
 };
 
+const updateBookChapters = async (bookId) => {
+    logger.info(`Starting chapter update for book: ${bookId}`);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    const book = await Book.findById(bookId)
+        .populate({
+            path: 'plots',
+            select: 'title description',
+            populate: { path: 'chapters', select: 'name description order' }
+        })
+        .populate('narrative', 'description')
+        .populate('spiceLevels', 'comboName description')
+        .populate('endings', 'optionLabel');
+
+    if (!book) throw new Error(`Book not found: ${bookId}`);
+    const batchId = book.batchId;
+    let bookWasFound = true;
+
+    try {
+        await book.updateOne(
+            { 'generationStatus.chapters.status': 'in_progress' },
+            { session }
+        );
+
+        const plot = book.plots?.[0];
+        if (!plot) throw new Error(`Plot not found for book: ${bookId}`);
+
+        const chapterBeats = plot.chapters
+            .sort((a, b) => a.order - b.order)
+            .map(c => `${c.name}: ${c.description}`)
+            .join('\n');
+
+        const spiceLevel = book.spiceLevels?.[0];
+
+        const promptData = {
+            title: book.title,
+            trope_name: plot.title,
+            trope_description: plot.description,
+            chapter_beats: chapterBeats,
+            narrative: book.narrative?.[0]?.description ?? '',
+            spice_level: spiceLevel ? `${spiceLevel.comboName} (${spiceLevel.description})` : '',
+            ending_type: book.endings?.[0]?.optionLabel ?? '',
+            location: '',
+            characters: ''
+        };
+
+        const { chaptersJSON, fullPrompt, rawContent } = await generateBookChapters(promptData);
+
+        // Save AI response in generated content
+        await BookGeneratedContent.create({
+            bookId: book._id,
+            batchId: book.batchId,
+            contentType: 'chapter',
+            promptUsed: fullPrompt,
+            rawApiResponse: rawContent,
+            source: 'OpenAI-o3-mini'
+        });
+
+        // Remove old chapters for this book
+        await BookChapter.deleteMany({ book: book._id }, { session });
+
+        // Insert new chapters
+        const newChapters = chaptersJSON.chapters.map((c, i) => ({
+            book: book._id,
+            title: c?.title,
+            content: c?.prose,
+            order: i + 1,
+            status: 'published'
+        }));
+
+        await BookChapter.insertMany(newChapters, { session });
+
+        book.generationStatus.chapters.status = 'completed';
+        await book.save({ session });
+
+        await session.commitTransaction();
+        logger.info(`Successfully updated ${newChapters.length} chapters for book: ${bookId}`);
+        return newChapters;
+    } catch (error) {
+        await session.abortTransaction();
+        logger.error(`Failed to update chapters for book: ${bookId}`, error);
+        await Book.findByIdAndUpdate(bookId, {
+            'generationStatus.chapters.status': 'failed',
+            'generationStatus.chapters.errorMessage': error.message || 'An unknown error occurred'
+        });
+
+        if (error instanceof OpenAIParseError) {
+            try {
+                await BookGeneratedContent.create({
+                    bookId: bookId,
+                    batchId: batchId,
+                    contentType: 'chapter',
+                    promptUsed: error.prompt,
+                    rawApiResponse: error.rawResponse,
+                    source: 'OpenAI-o3-mini'
+                });
+            } catch (e) {
+                logger.warn('Could not save parse-error payload:', e.message);
+            }
+        }
+        throw error;
+    } finally {
+        session.endSession();
+    }
+};
+
 module.exports = {
     createChapter,
     getChaptersByBook,
     getChapterById,
     updateChapter,
     reorderChapters,
-    deleteChapter
+    deleteChapter,
+    updateBookChapters
 };

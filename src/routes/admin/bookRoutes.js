@@ -9,7 +9,10 @@ const {
     uploadBookCover,
     deleteBook,
     reorderBookChapters,
-    updateBookCover
+    updateBookCover,
+    generateAndUpdateTitle,
+    generateAndUpdateDescription,
+    generateAndUpdateChapters
 } = require('../../controllers/Book/bookController');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
@@ -73,6 +76,20 @@ router.put('/:id',
     validateObjectId,
     validateUpdateBook,
     updateBook
+);
+
+router.put('/:id/generate-title',
+    authenticate,
+    authorize('admin'),
+    validateObjectId,
+    generateAndUpdateTitle
+);
+
+router.put('/:id/generate-description',
+    authenticate,
+    authorize('admin'),
+    validateObjectId,
+    generateAndUpdateDescription
 );
 
 router.delete('/:id',
