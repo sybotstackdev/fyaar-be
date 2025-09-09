@@ -84,23 +84,25 @@ const generateChatCompletion = async (systemPrompt, userPrompt, model = 'gpt-4o-
  */
 const generateBookTitles = async (storyDescription, genreLayer) => {
   const prompt = await instructionModel.findOne({ name: "Book Title" })
-  const systemPrompt = extractInstructionText(prompt, 'BookTitleSystem') || `You are a professional publishing assistant. Follow these universal rules strictly for book title
-generation:
-- Titles must be original: do not duplicate or closely copy famous books, films, or TV brands.
-- No profanity, sexual slang, graphic violence, or extreme kinks in titles.
-- No names or references to gods, deities, sacred texts, temples, mosques, churches, rituals,
-caste identities, politics, or nationalism.
-- Avoid cultural caricatures, stereotypes, or discriminatory language.
-- No meta commentary, filler words, subtitles, numbering, or format breaks.
-- Avoid clichés/overused words in titles: forever, always, passion, destiny, heart, soul, dark,
-legend, silent, girl, missing.
-- Titles must remain under 5 words and follow the exact output format requested.`;
+  const systemPrompt = extractInstructionText(prompt, 'BookTitleSystem');
 
   const userPrompt = `
   ${extractInstructionText(prompt, 'BookTitleUser')}
 INPUT
 STORY_DESCRIPTION: ${storyDescription}
 GENRE_LAYER: ${genreLayer}`;
+  const variables = {
+    storyDescription: "Once upon a time...",
+    authorName: "Ajay Sharma"
+  };
+
+
+  // const templateText = extractInstructionText(prompt, 'BookTitleUser');
+
+  // const updatedPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
+
+  // console.log(updatedPrompt);
+  // return
 
   console.log('User prompt (Book Title):');
   console.log(userPrompt);
@@ -134,16 +136,7 @@ const generateBookDescription = async (promptData) => {
   const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
   const prompt = await instructionModel.findOne({ name: "Book Description" })
 
-  const systemPrompt = extractInstructionText(prompt, 'BookDescriptionSystem') || `You are a professional publishing editor who writes book descriptions (back-cover blurbs) for international markets.
-Follow these rules strictly:
-- All characters must be 21+ (no minors).
-- No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, or porn-industry settings.
-- No profanity, sexual slang, extreme kinks, or graphic violence.
-- No references to gods, deities, sacred texts, temples, mosques, churches, rituals, worship, caste identities, politics, or nationalism.
-- No stereotypes, cultural caricatures, or discriminatory language.
-- No clichés (“heart skipped a beat,” “souls entwined,” etc.).
-- No meta commentary, filler text, or author notes.
-- No breaking format: return output exactly as instructed.`;
+  const systemPrompt = extractInstructionText(prompt, 'BookDescriptionSystem');
 
   const userPrompt = `
 INPUT
@@ -175,18 +168,7 @@ ${extractInstructionText(prompt, 'BookDescriptionUser')}
 const generateBookChapters = async (promptData) => {
   const { title, trope_name, trope_description, chapter_beats, narrative, spice_level, ending_type, location, characters } = promptData;
   const prompt = await instructionModel.findOne({ name: "Book Chapters" })
-  const systemPrompt = extractInstructionText(prompt, 'BookChaptersSystem') || `SYSTEM: ROMANCE SHORT STORY ENGINE — CHAPTER GENERATION
-
-You are a professional romance author creating immersive, emotionally intense stories for an international audience.
-Follow these universal rules strictly:
-- All characters must be 21+.
-- No incest, teacher/student, intoxication, coercion, non-consent/dub-con, humiliation, bestiality, medical/knife/needle play, porn-industry settings.
-- No profanity, extreme kinks, or graphic violence.
-- No references to gods, deities, sacred texts, temples, mosques, churches, rituals, worship, caste identities, politics, or nationalism.
-- No stereotypes, cultural caricatures, or discriminatory language.
-- No clichés (“heart skipped a beat,” “souls entwined,” etc.).
-- No meta commentary, filler text, watermarks, or author notes.
-- No format breaks (output prose only, follow requested structure).`;
+  const systemPrompt = extractInstructionText(prompt, 'BookChaptersSystem');
 
   const userPrompt = `INPUT
 title: ${title}
