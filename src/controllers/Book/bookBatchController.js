@@ -24,16 +24,6 @@ const UpdateBookBatch = asyncHandler(async (req, res) => {
 
 
 /**
- * @desc    Re Create a book batch (admin only)
- * @route   PUT /api/batches
- * @access  Admin
- */
-const RecreateBookBatch = asyncHandler(async (req, res) => {
-    const newBatch = await BookBatchService.createBookBatch(req.body, req.user._id);
-    return ApiResponse.success(res, 201, 'Book batch created successfully', newBatch);
-});
-
-/**
  * @desc    Get all book batches
  * @route   GET /api/batches
  * @access  Admin
