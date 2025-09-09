@@ -50,11 +50,11 @@ const Newworker = new Worker('re-book-generation', async job => {
     if (job.name === 're-generate-titles') {
         await regenerateBookTitles(job.data.batchId);
     } else if (job.name === 're-generate-description') {
-        await regenerateBookDescriptions(job.data.bookId);
+        await regenerateBookDescriptions(job.data.batchId);
     } else if (job.name === 're-generate-chapters') {
-        await regenerateBookChapters(job.data.bookId);
+        await regenerateBookChapters(job.data.batchId);
     } else if(job.name === 're-generate-cover') {
-        await regenerateBookCovers(job.data.bookId);
+        await regenerateBookCovers(job.data.batchId);
     }
 }, {
     connection: redisConnection,
