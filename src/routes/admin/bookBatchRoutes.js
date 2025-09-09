@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createBookBatch, getBookBatches, getBookBatchById, deleteBookBatch } = require('../../controllers/Book/bookBatchController');
+const { createBookBatch, getBookBatches, getBookBatchById, deleteBookBatch, UpdateBookBatch } = require('../../controllers/Book/bookBatchController');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
 const { createBookBatchSchema } = require('../../middleware/validators/bookBatchValidator');
@@ -15,6 +15,12 @@ router.route('/')
         createBookBatchSchema,
         createBookBatch
     );
+
+router.route('/:id').put(
+    authenticate,
+    authorize('admin'),
+    UpdateBookBatch
+)
 
 router.route('/')
     .get(

@@ -16,6 +16,13 @@ bookGenerationQueue.on('error', err => {
     logger.error('BullMQ Queue Error:', err);
 });
 
+const bookReGenerationQueue = new Queue('re-book-generation', { connection: redisConnection });
+
+bookReGenerationQueue.on('error', err => {
+    logger.error('BullMQ Queue Error:', err);
+});
+
 module.exports = {
-    bookGenerationQueue
+    bookGenerationQueue,
+    bookReGenerationQueue
 };

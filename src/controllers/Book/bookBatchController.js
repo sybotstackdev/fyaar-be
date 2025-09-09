@@ -13,6 +13,27 @@ const createBookBatch = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Update a book batch (admin only)
+ * @route   PUT /api/batches/:id
+ * @access  Admin
+ */
+const UpdateBookBatch = asyncHandler(async (req, res) => {
+    const newBatch = await BookBatchService.updateBookBatch(req.params.id, req.user._id);
+    return ApiResponse.success(res, 201, 'Book batch Updated successfully', newBatch);
+});
+
+
+/**
+ * @desc    Re Create a book batch (admin only)
+ * @route   PUT /api/batches
+ * @access  Admin
+ */
+const RecreateBookBatch = asyncHandler(async (req, res) => {
+    const newBatch = await BookBatchService.createBookBatch(req.body, req.user._id);
+    return ApiResponse.success(res, 201, 'Book batch created successfully', newBatch);
+});
+
+/**
  * @desc    Get all book batches
  * @route   GET /api/batches
  * @access  Admin
@@ -47,5 +68,6 @@ module.exports = {
     createBookBatch,
     getBookBatches,
     getBookBatchById,
-    deleteBookBatch
+    deleteBookBatch,
+    UpdateBookBatch
 };

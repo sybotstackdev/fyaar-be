@@ -3,7 +3,7 @@ const { Worker } = require('bullmq');
 const mongoose = require('mongoose');
 const config = require('./config/environment');
 const logger = require('./utils/logger');
-const { processBookTitleGeneration, processBookDescriptionGeneration, processBookChapterGeneration, processBookCoverGeneration } = require('./jobs/bookGenerationJob');
+const { processBookTitleGeneration, processBookDescriptionGeneration, processBookChapterGeneration, processBookCoverGeneration, regenerateBookTitles, regenerateBookDescriptions, regenerateBookChapters, regenerateBookCovers } = require('./jobs/bookGenerationJob');
 
 const redisConnection = {
     host: config.redis.host || '127.0.0.1',
@@ -41,5 +41,30 @@ worker.on('completed', job => {
 });
 
 worker.on('failed', (job, err) => {
+    logger.error(`Job ${job.id} has failed with error:`, err.message);
+});
+
+
+const Newworker = new Worker('re-book-generation', async job => {
+    logger.info(`Processing job '${job.name}' with ID ${job.id}`);
+    if (job.name === 're-generate-titles') {
+        await regenerateBookTitles(job.data.batchId);
+    } else if (job.name === 're-generate-description') {
+        await regenerateBookDescriptions(job.data.bookId);
+    } else if (job.name === 're-generate-chapters') {
+        await regenerateBookChapters(job.data.bookId);
+    } else if(job.name === 're-generate-cover') {
+        await regenerateBookCovers(job.data.bookId);
+    }
+}, {
+    connection: redisConnection,
+    concurrency: 5
+});
+
+Newworker.on('completed', job => {
+    logger.info(`Job ${job.id} has completed!`);
+});
+
+Newworker.on('failed', (job, err) => {
     logger.error(`Job ${job.id} has failed with error:`, err.message);
 });

@@ -56,6 +56,49 @@ const createBookBatch = async (batchData, userId) => {
 };
 
 /**
+ * @desc    Restart title generation for all books in a batch
+ * @param   {string} batchId - The ID of the batch to update
+ * @param   {string} userId - The ID of the user updating the batch
+ * @returns {Promise<Object>} The updated book batch
+ */
+const updateBookBatch = async (batchId, userId) => {
+    const batch = await BookBatch.findById(batchId);
+
+    if (!batch) {
+        throw new ApiError(404, 'Book batch not found.');
+    }
+
+    // ✅ Ensure only owner can update
+    if (batch.userId.toString() !== userId.toString()) {
+        throw new ApiError(403, 'You are not authorized to update this batch.');
+    }
+
+    // 🔹 Reset all book title generation statuses
+    await Book.updateMany(
+        { batchId },
+        {
+            $set: {
+                'generationStatus.title.status': 'pending',
+                'generationStatus.title.errorMessage': null,
+                status: 'generating',
+            },
+        }
+    );
+
+    // 🔹 Re-queue job for regenerating titles
+    jobService.queueReJob('re-generate-titles', { batchId  : batchId});
+
+    batch.status = 'pending';
+    await batch.save();
+
+    logger.info(`✅ Title regeneration restarted for batch ID: ${batch._id}`);
+
+    return batch;
+};
+
+
+
+/**
  * @desc    Get all book batches
  * @param   {Object} options - Options for the query
  * @param   {number} options.page - Page number
@@ -142,5 +185,6 @@ module.exports = {
     createBookBatch,
     getAllBookBatches,
     getBookBatchById,
-    deleteBookBatch
+    deleteBookBatch,
+    updateBookBatch
 };
