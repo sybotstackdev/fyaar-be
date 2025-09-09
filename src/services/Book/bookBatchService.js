@@ -149,7 +149,19 @@ const getAllBookBatches = async (options) => {
 const getBookBatchById = async (bookBatchId) => {
     try {
         const bookBatch = await BookBatch.findOne({ _id: bookBatchId })
-            .populate('books', 'title status generationStatus');
+            .populate({
+                path: 'books',
+                select: 'title status generationStatus authors genres plots narrative spiceLevels endings locations',
+                populate: [
+                    { path: 'authors', select: 'authorName _id' },
+                    { path: 'genres', select: 'title _id' },
+                    { path: 'plots', select: 'title _id' },
+                    { path: 'narrative', select: 'optionLabel _id' },
+                    { path: 'spiceLevels', select: 'comboName _id' },
+                    { path: 'endings', select: 'optionLabel _id' },
+                    {path : 'locations' , select : '_id name'}
+                ]
+            });
         if (!bookBatch) throw new ApiError(404, 'Book batch not found');
         return bookBatch;
     } catch (error) {
