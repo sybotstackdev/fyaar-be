@@ -56,7 +56,7 @@ const createBookBatch = async (batchData, userId) => {
 };
 
 /**
- * @desc    Restart title generation for all books in a batch
+ * @desc    Restart title generation for all books in a batch (only incomplete ones)
  * @param   {string} batchId - The ID of the batch to update
  * @param   {string} userId - The ID of the user updating the batch
  * @returns {Promise<Object>} The updated book batch
@@ -73,29 +73,26 @@ const updateBookBatch = async (batchId, userId) => {
         throw new ApiError(403, 'You are not authorized to update this batch.');
     }
 
-    // 🔹 Reset all book title generation statuses
-    await Book.updateMany(
-        { batchId },
-        {
-            $set: {
-                'generationStatus.title.status': 'pending',
-                'generationStatus.title.errorMessage': null,
-                status: 'generating',
-            },
-        }
+    // 🔹 Find only books that are NOT completed
+    const booksToRetry = await Book.find({
+        batchId,
+        'generationStatus.title.status': { $ne: 'completed' }
+    }).select('_id');
+
+    if (booksToRetry.length === 0) {
+        logger.info(`✅ All book titles already completed for batch ID: ${batch._id}`);
+        return batch;
+    }
+
+    // 🔹 Queue job for regenerating titles only for those books
+    jobService.queueReJob('re-generate-titles', { batchId, bookIds: booksToRetry.map(b => b._id) });
+
+    logger.info(
+        `🔄 Title regeneration triggered for ${booksToRetry.length} incomplete books in batch ID: ${batch._id}`
     );
-
-    // 🔹 Re-queue job for regenerating titles
-    jobService.queueReJob('re-generate-titles', { batchId  : batchId});
-
-    batch.status = 'pending';
-    await batch.save();
-
-    logger.info(`✅ Title regeneration restarted for batch ID: ${batch._id}`);
 
     return batch;
 };
-
 
 
 /**
