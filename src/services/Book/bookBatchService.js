@@ -15,6 +15,7 @@ const BookChapter = require('../../models/bookChapterModel');
 const createBookBatch = async (batchData, userId) => {
     const { name, books } = batchData;
 
+    console.log(books)
     if (!books || !Array.isArray(books) || books.length === 0) {
         throw new ApiError(400, 'Batch must contain at least one book.');
     }
