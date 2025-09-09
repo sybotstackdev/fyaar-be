@@ -49,7 +49,7 @@ const extractInstructionText = (doc, role) => {
  * @param {string} model - The model to use for the completion (e.g., 'gpt-4', 'gpt-3.5-turbo', 'o3-mini'). Defaults to 'gpt-4'.
  * @returns {Promise<string>} The generated content from the assistant.
  */
-const generateChatCompletion = async (systemPrompt, userPrompt, model = 'o3-mini') => {
+const generateChatCompletion = async (systemPrompt, userPrompt, model = 'gpt-4o-mini') => {
   try {
     const messages = [
       { role: 'system', content: systemPrompt },
