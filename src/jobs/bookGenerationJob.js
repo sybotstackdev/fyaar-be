@@ -234,7 +234,6 @@ const regenerateBookTitles = async (batchId) => {
 
                 await session.commitTransaction();
                 // Dispatch description job
-                jobService.queueReJob('re-generate-description', { bookId: book._id });
                 logger.info(`Re-generated and assigned title for book: ${book._id}. Queued description job.`);
 
             } catch (error) {
@@ -258,11 +257,12 @@ const regenerateBookTitles = async (batchId) => {
                     'generationStatus.title.errorMessage': error.message || 'An unknown error occurred during re-generation'
                 });
             } finally {
+                jobService.queueReJob('re-generate-description', { bookId: book._id });
                 session.endSession();
             }
         }
 
-        await batch.updateOne({ status: 'recompleted' });
+        await batch.updateOne({ status: 'completed' });
         logger.info(`Title re-generation completed for batch: ${batchId}`);
 
     } catch (error) {
@@ -409,9 +409,6 @@ const regenerateBookDescriptions = async (batchId) => {
                 logger.info(`Retrying description generation for book: ${book._id}`);
                 await processBookDescriptionGeneration(book._id); // reuse existing function
 
-                // ✅ Queue the next job after successful description regeneration
-                jobService.queueReJob('re-generate-chapters', { bookId: book._id });
-                logger.info(`Queued chapter generation for book: ${book._id}`);
             } catch (err) {
                 logger.error(`❌ Re-generation failed for book ${book._id} in batch ${batchId}`, err);
             }
@@ -421,6 +418,10 @@ const regenerateBookDescriptions = async (batchId) => {
     } catch (error) {
         logger.error(`Critical error while retrying description generation for batch ${batchId}`, error);
         throw error;
+    } finally {
+        // ✅ Queue the next job after successful description regeneration
+        jobService.queueReJob('re-generate-chapters', { bookId: book._id });
+        logger.info(`Queued chapter generation for book: ${book._id}`);
     }
 };
 
@@ -629,9 +630,6 @@ const regenerateBookChapters = async (batchId) => {
                 await session.commitTransaction();
                 logger.info(`✅ Successfully re-generated ${newChapters.length} chapters for book: ${book._id}`);
 
-                // Queue re-cover job
-                jobService.queueReJob('re-generate-cover', { bookId: book._id });
-                logger.info(`📦 Queued re-cover generation for book: ${book._id}`);
 
             } catch (err) {
                 await session.abortTransaction();
@@ -657,6 +655,9 @@ const regenerateBookChapters = async (batchId) => {
                     }
                 }
             } finally {
+                // Queue re-cover job
+                jobService.queueReJob('re-generate-cover', { bookId: book._id });
+                logger.info(`📦 Queued re-cover generation for book: ${book._id}`);
                 session.endSession();
             }
         }
@@ -800,4 +801,4 @@ const regenerateBookCovers = async (batchId) => {
 };
 
 
-module.exports = { processBookTitleGeneration, processBookDescriptionGeneration, processBookChapterGeneration, processBookCoverGeneration , regenerateBookTitles , regenerateBookDescriptions , regenerateBookCovers , regenerateBookChapters };
+module.exports = { processBookTitleGeneration, processBookDescriptionGeneration, processBookChapterGeneration, processBookCoverGeneration, regenerateBookTitles, regenerateBookDescriptions, regenerateBookCovers, regenerateBookChapters };
