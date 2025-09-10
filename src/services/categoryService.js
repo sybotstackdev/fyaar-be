@@ -129,11 +129,13 @@ const getCategoryById = async (id) => {
         }
 
         const categoryBooks = await CategoryBook.find({ category: category._id })
-            .sort({ order: 'asc' })
+            .sort({ order: 'desc' })
             .populate({
                 path: 'book',
                 select: 'title bookCover'
             });
+
+            console.log(categoryBooks)
 
         category.books = categoryBooks.map(cb => ({
             book: cb.book,

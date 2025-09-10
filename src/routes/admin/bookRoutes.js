@@ -12,7 +12,7 @@ const {
     updateBookCover,
     generateAndUpdateTitle,
     generateAndUpdateDescription,
-    generateAndUpdateChapters
+    getBookWithChaptersById,
 } = require('../../controllers/Book/bookController');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { apiLimiter } = require('../../middleware/rateLimiter');
@@ -68,6 +68,12 @@ router.get('/:id',
     authorize('admin'),
     validateObjectId,
     getBookById
+);
+
+router.get('/details/:id',
+    authenticate,
+    validateObjectId,
+    getBookWithChaptersById
 );
 
 router.put('/:id',

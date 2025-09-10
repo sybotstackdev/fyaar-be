@@ -11,7 +11,7 @@ const createBook = asyncHandler(async (req, res) => {
 });
 
 const getAllBooks = asyncHandler(async (req, res) => {
-    const { page, limit, sort, order, search, status, showDeleted } = req.query;
+    const { page, limit, sort, order, search, status, showDeleted , genres , tags } = req.query;
     const result = await BookService.getAllBooks({
         page: parseInt(page) || 1,
         limit: parseInt(limit) || 10,
@@ -19,13 +19,20 @@ const getAllBooks = asyncHandler(async (req, res) => {
         order: order || 'desc',
         search: search || '',
         status: status || '',
-        showDeleted: showDeleted || 'false'
+        showDeleted: showDeleted || 'false' ,
+        genres : genres,
+        tags : tags
     });
     return ApiResponse.success(res, 200, 'Books retrieved successfully', result);
 });
 
 const getBookById = asyncHandler(async (req, res) => {
     const book = await BookService.getBookById(req.params.id);
+    return ApiResponse.success(res, 200, 'Book retrieved successfully', book);
+});
+
+const getBookWithChaptersById = asyncHandler(async (req, res) => {
+    const book = await BookService.getBookWithChaptersById(req.params.id);
     return ApiResponse.success(res, 200, 'Book retrieved successfully', book);
 });
 
@@ -109,5 +116,6 @@ module.exports = {
     uploadBookCover,
     updateBookCover,
     generateAndUpdateTitle,
-    generateAndUpdateDescription
+    generateAndUpdateDescription,
+    getBookWithChaptersById
 };
