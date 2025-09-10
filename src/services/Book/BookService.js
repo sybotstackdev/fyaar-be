@@ -8,6 +8,8 @@ const { generateBookTitles, generateBookDescription, generateBookChapters, OpenA
 const { generateImage } = require('../ai/imageGeneration');
 const BookGeneratedContent = require("../../models/bookGeneratedContentModel.js");
 
+const ObjectId = mongoose.Types.ObjectId;
+
 const createBook = async (bookData, userId) => {
     const { chapters, ...bookDetails } = bookData;
 
@@ -42,9 +44,16 @@ const createBook = async (bookData, userId) => {
 
 const getAllBooks = async (options = {}) => {
     try {
-
-        const { page = 1, limit = 10, sort = 'createdAt', order = 'desc', search = '', status = '' } = options;
-
+        const {
+            page = 1,
+            limit = 10,
+            sort = 'createdAt',
+            order = 'desc',
+            search = '',
+            status = '',
+            genres = '',
+            tags = ''
+        } = options;
 
         const query = {};
 
@@ -52,31 +61,64 @@ const getAllBooks = async (options = {}) => {
             query.title = { $regex: search, $options: 'i' };
         }
 
-        if (status) {
-            query.status = status;
+        // if (status) {
+        //     query.status = status;
+        // }
+
+        if (tags) {
+            let tagArray = [];
+            if (Array.isArray(tags)) {
+                tagArray = tags.map(id => new ObjectId(id));
+            } else {
+                tagArray = tags.split(",").map(id => new ObjectId(id.trim()));
+            }
+            query.tags = { $in: tagArray };
+        }
+
+        if (genres) {
+            let genreArray = [];
+            if (Array.isArray(genres)) {
+                genreArray = genres.map(id => new ObjectId(id));
+            } else {
+                genreArray = genres.split(",").map(id => new ObjectId(id.trim()));
+            }
+            query.genres = { $in: genreArray };
         }
 
 
+
+        console.log(query)
         const skip = (page - 1) * limit;
         const sortObj = { [sort]: order === 'desc' ? -1 : 1 };
 
-        const books = await Book.find(query).sort(sortObj).skip(skip).limit(limit)
-            .populate('authors', 'authorName')
-            .populate('tags', 'name')
-            .populate('genres', 'title');
+        const books = await Book.find(query)
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limit)
+        .populate('authors', 'authorName')
+        .populate('tags', 'name')
+        .populate('genres', 'title');
 
         const total = await Book.countDocuments(query);
         const totalPages = Math.ceil(total / limit);
 
         return {
             results: books,
-            pagination: { page, limit, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 }
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+            }
         };
     } catch (error) {
         logger.error('Get all books error:', error.message);
         throw error;
     }
 };
+
 
 const getBookById = async (bookId) => {
     try {
@@ -91,6 +133,30 @@ const getBookById = async (bookId) => {
             .populate('genres');
         if (!book) throw new ApiError(404, 'Book not found');
         return book;
+    } catch (error) {
+        logger.error('Get book by ID error:', error.message);
+        throw error;
+    }
+};
+
+const getBookWithChaptersById = async (bookId) => {
+    try {
+        const book = await Book.findOne({ _id: bookId })
+            .populate('authors')
+            .populate('tags')
+            .populate('spiceLevels')
+            .populate('locations')
+            .populate('plots')
+            .populate('narrative')
+            .populate('endings')
+            .populate('genres');
+
+        const bookChapters = await BookChapter.find({ book: bookId })
+
+        console.log(bookChapters)
+        let response = { ...book.toObject(), bookChapters }
+        if (!book) throw new ApiError(404, 'Book not found');
+        return response;
     } catch (error) {
         logger.error('Get book by ID error:', error.message);
         throw error;
@@ -355,6 +421,7 @@ module.exports = {
     deleteBook,
     updateBookCover,
     generateAndUpdateTitle,
-    updateBookDescription
+    updateBookDescription,
+    getBookWithChaptersById
 };
 
