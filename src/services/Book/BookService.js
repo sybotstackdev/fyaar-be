@@ -275,6 +275,7 @@ async function updateBookDescription(bookId) {
                 select: 'description',
                 populate: { path: 'variants', select: 'name' }
             })
+            .populate('locations')
             .populate({
                 path: 'plots',
                 select: 'description',
@@ -293,6 +294,7 @@ async function updateBookDescription(bookId) {
 
         // Select random variant
         const genre = book.genres?.[0];
+        const location = book.locations?.[0];
         const variants = genre?.variants;
         let randomVariantName = '';
         let randomVariantId = null;
@@ -311,7 +313,7 @@ async function updateBookDescription(bookId) {
             title: book.title,
             genre: genre?.description ?? '',
             variant: randomVariantName,
-            location: '',
+            location: location.name,
             characters: '',
             trope_description: book.plots?.[0]?.description ?? '',
             chapter_summaries: book.plots?.[0]?.chapters?.map(c => c.description).join('; ') ?? ''

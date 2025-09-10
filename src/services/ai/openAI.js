@@ -86,25 +86,75 @@ const generateBookTitles = async (storyDescription, genreLayer) => {
   const prompt = await instructionModel.findOne({ name: "Book Title" })
   const systemPrompt = extractInstructionText(prompt, 'BookTitleSystem');
 
-  const userPrompt = `
-  ${extractInstructionText(prompt, 'BookTitleUser')}
-INPUT
-STORY_DESCRIPTION: ${storyDescription}
-GENRE_LAYER: ${genreLayer}`;
+  //   const userPrompt = `
+  //   ${extractInstructionText(prompt, 'BookTitleUser')}
+  // INPUT
+  // STORY_DESCRIPTION: ${storyDescription}
+  // GENRE_LAYER: ${genreLayer}`;
   const variables = {
-    storyDescription: "Once upon a time...",
-    authorName: "Ajay Sharma"
+    storyDescription: storyDescription,
+    genreLayer: genreLayer
   };
 
 
-  // const templateText = extractInstructionText(prompt, 'BookTitleUser');
+  const templateText = extractInstructionText(prompt, 'BookTitleUser');
 
-  // const updatedPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
-
-  // console.log(updatedPrompt);
-  // return
+  const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
   console.log('User prompt (Book Title):');
+  console.log(userPrompt);
+
+  const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
+  const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
+
+  try {
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      logger.error('No valid JSON object found in the AI response.');
+      throw new OpenAIParseError('No valid JSON object found in the AI response.', fullPrompt, rawContent);
+    }
+    const jsonString = jsonMatch[0];
+    const parsedContent = JSON.parse(jsonString);
+    logger.info('Successfully parsed book titles from OpenAI response.');
+    return { parsedContent, fullPrompt, rawContent };
+  } catch (error) {
+    logger.error('Failed to parse JSON from OpenAI response:', error.message);
+    logger.debug('Raw content from OpenAI:', rawContent);
+    throw new OpenAIParseError('Failed to parse book titles from AI response.', fullPrompt, rawContent);
+  }
+};
+
+/**
+ * Generates book tags using OpenAI based on a specific prompt structure.
+ * @param {string} storyDescription - The description of the story.
+ * @param {string} genreLayer - The genre layer for the story.
+ * @returns {Promise<Object>} A promise that resolves to an object with categorized book tags.
+ */
+const generateBookTags = async (storyDescription, genreLayer, spiceLevel, ending) => {
+  const prompt = await instructionModel.findOne({ name: "Book Tags" })
+  const systemPrompt = extractInstructionText(prompt, 'BookTagsSystem');
+
+  const variables = {
+    storyDescription: storyDescription,
+    genreLayer: genreLayer,
+    spiceLevel: spiceLevel,
+    ending: ending
+  };
+
+  //   const userPrompt = `
+  //   ${extractInstructionText(prompt, 'BookTagsUser')}
+  // USER INPUT  
+  // [STORY_DESCRIPTION : ${storyDescription}]  
+  // [GENRE_LAYER : ${genreLayer}]  
+  // [SPICE_LEVEL : ${spiceLevel}]  
+  // [ENDING_TYPE : ${ending}]  `;
+
+
+  const templateText = extractInstructionText(prompt, 'BookTagsUser');
+
+  const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
+
+  console.log('User prompt (Book Tags):');
   console.log(userPrompt);
 
   const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
@@ -138,21 +188,35 @@ const generateBookDescription = async (promptData) => {
 
   const systemPrompt = extractInstructionText(prompt, 'BookDescriptionSystem');
 
-  const userPrompt = `
-INPUT
-title: ${title}
-genre: ${genre}
-variant: ${variant}
-location: ${location || ""}
-characters: ${JSON.stringify(characters || "")} // if missing, use trope names; if none, use roles/professions
-trope_description: ${trope_description}
-chapter_summaries: ${chapter_summaries}
+  //   const userPrompt = `
+  // INPUT
+  // title: ${title}
+  // genre: ${genre}
+  // variant: ${variant}
+  // location: ${location || ""}
+  // characters: ${JSON.stringify(characters || "")} // if missing, use trope names; if none, use roles/professions
+  // trope_description: ${trope_description}
+  // chapter_summaries: ${chapter_summaries}
 
-${extractInstructionText(prompt, 'BookDescriptionUser')}
-`;
+  // ${extractInstructionText(prompt, 'BookDescriptionUser')}
+  // `;
+
+  const variables = {
+    title: title,
+    trope_description: trope_description,
+    genre: genre,
+    variant: variant,
+    chapter_summaries: chapter_summaries,
+    location: location,
+    characters: characters
+  };
+
+  const templateText = extractInstructionText(prompt, 'BookDescriptionUser');
+
+  const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
   console.log('User prompt (Book Description):');
-  console.log(userPrompt);
+  console.log(promptData);
 
   const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
   const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
@@ -170,18 +234,36 @@ const generateBookChapters = async (promptData) => {
   const prompt = await instructionModel.findOne({ name: "Book Chapters" })
   const systemPrompt = extractInstructionText(prompt, 'BookChaptersSystem');
 
-  const userPrompt = `INPUT
-title: ${title}
-trope_name: ${trope_name}
-trope_description: ${trope_description}
-chapter_beats: ${chapter_beats} # 3-chapter plan with key beats per chapter
-Narrative: ${narrative} 
-spice_level: ${spice_level} # apply intimacy baseline; step down if continuity breaks
-ending_type: ${ending_type}
-location: ${location || ''}
-characters: ${JSON.stringify(characters) || '""'} # if absent, use trope names; if none, assign natural names and keep consistent
 
-${extractInstructionText(prompt, 'BookChaptersUser')}`;
+  //   const userPrompt = `INPUT
+  // title: ${title}
+  // trope_name: ${trope_name}
+  // trope_description: ${trope_description}
+  // chapter_beats: ${chapter_beats} # 3-chapter plan with key beats per chapter
+  // Narrative: ${narrative} 
+  // spice_level: ${spice_level} # apply intimacy baseline; step down if continuity breaks
+  // ending_type: ${ending_type}
+  // location: ${location || ''}
+  // characters: ${JSON.stringify(characters) || '""'} # if absent, use trope names; if none, assign natural names and keep consistent
+
+  // ${extractInstructionText(prompt, 'BookChaptersUser')}`;
+
+
+  const variables = {
+    title: title,
+    trope_description: trope_description,
+    trope_name: trope_name,
+    chapter_beats: chapter_beats,
+    narrative: narrative,
+    spice_level: spice_level,
+    ending_type: ending_type,
+    location: location,
+    characters: characters
+  };
+
+  const templateText = extractInstructionText(prompt, 'BookChaptersUser');
+
+  const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
   console.log('User prompt (Book Chapters):');
   console.log(userPrompt);
@@ -218,14 +300,29 @@ ${extractInstructionText(prompt, 'BookChaptersUser')}`;
 
 const generateBookCoverPrompt = async (promptData) => {
   const { trope_description, chapter_summaries, ending_type, spice_level } = promptData;
+  const prompt = await instructionModel.findOne({ name: "Book Cover" })
 
   const systemPrompt = ``;
 
-  const userPrompt = `Write a concise scene description (1–3 sentences) for a book cover.  
-Base it on the ${trope_description} and key ${chapter_summaries}.  
-Convey ${ending_type} and ${spice_level} through atmosphere, mood, body language, and proximity cues.  
-Do not reference art style, colors, or typography.  
-Output only the scene description, no extra commentary.`;
+    const variables = {
+    trope_description: trope_description,
+    chapter_summaries: chapter_summaries,
+    spice_level: spice_level,
+    ending_type: ending_type,
+  };
+
+//   const userPrompt = `Write a concise scene description (1–3 sentences) for a book cover.  
+// Base it on the ${trope_description} and key ${chapter_summaries}.  
+// Convey ${ending_type} and ${spice_level} through atmosphere, mood, body language, and proximity cues.  
+// Do not reference art style, colors, or typography.  
+// Output only the scene description, no extra commentary.`;
+
+  const templateText = extractInstructionText(prompt, 'Book Cover');
+
+  const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
+
+  console.log('User prompt (Book Chapters):');
+  console.log(userPrompt);
 
   const fullPrompt = `${systemPrompt}\n\nUSER PROMPT:\n${userPrompt}`;
   const rawContent = await generateChatCompletion(systemPrompt, userPrompt);
@@ -240,5 +337,6 @@ module.exports = {
   generateBookDescription,
   generateBookChapters,
   generateBookCoverPrompt,
+  generateBookTags,
   OpenAIParseError
 };
