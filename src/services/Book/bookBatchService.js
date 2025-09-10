@@ -79,10 +79,10 @@ const updateBookBatch = async (batchId, userId) => {
         'generationStatus.title.status': { $ne: 'completed' }
     }).select('_id');
 
-    if (booksToRetry.length === 0) {
-        logger.info(`✅ All book titles already completed for batch ID: ${batch._id}`);
-        return batch;
-    }
+    // if (booksToRetry.length === 0) {
+    //     logger.info(`✅ All book titles already completed for batch ID: ${batch._id}`);
+    //     return batch;
+    // }
 
     // 🔹 Queue job for regenerating titles only for those books
     jobService.queueReJob('re-generate-titles', { batchId, bookIds: booksToRetry.map(b => b._id) });
