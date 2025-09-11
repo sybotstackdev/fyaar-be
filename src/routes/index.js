@@ -18,6 +18,8 @@ const bookChapterRoutes = require('./admin/bookChapterRoutes');
 const categoryRoutes = require('./admin/categoryRoutes');
 const bookBatchRoutes = require('./admin/bookBatchRoutes');
 const dashboardRoutes = require('./admin/dashboardRoutes.js')
+const bookmarkRoutes = require('./bookmarkRoutes.js')
+const ReportRoutes = require('./reportRoutes.js')
 
 const router = express.Router();
 
@@ -52,6 +54,8 @@ router.use('/books/chapters', bookChapterRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/batches', bookBatchRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/bookmark', bookmarkRoutes);
+router.use('/report' , ReportRoutes)
 
 // 404 handler for API routes
 router.use('*', (req, res) => {

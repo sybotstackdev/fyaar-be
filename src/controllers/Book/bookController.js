@@ -32,7 +32,7 @@ const getBookById = asyncHandler(async (req, res) => {
 });
 
 const getBookWithChaptersById = asyncHandler(async (req, res) => {
-    const book = await BookService.getBookWithChaptersById(req.params.id);
+    const book = await BookService.getBookWithChaptersById(req.params.id , req.user._id);
     return ApiResponse.success(res, 200, 'Book retrieved successfully', book);
 });
 

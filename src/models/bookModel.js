@@ -81,7 +81,13 @@ const bookSchema = new mongoose.Schema({
         unique: true,
         lowercase: true,
         trim: true
-    }
+    },
+    views: { type: Number, default: 0 },
+    dummy_views: {
+        type: Number,
+        default: () => Math.floor(100 + Math.random() * 900)
+    },
+    readtime: { type: Number, default: 0 },
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
