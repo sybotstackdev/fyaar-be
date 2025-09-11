@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 const Book = require('../../models/bookModel');
 const BookChapter = require('../../models/bookChapterModel');
+const BookViews = require('../../models/bookViewsModal.js')
 const logger = require('../../utils/logger');
 const { uploadToS3, deleteFromS3 } = require('../fileUploadService');
 const ApiError = require('../../utils/ApiError');
-const { generateBookTitles, generateBookDescription, generateBookChapters, OpenAIParseError } = require('../ai/openAI');
+const { generateBookTitles, generateBookDescription, generateBookChapters, OpenAIParseError, extractInstructionText } = require('../ai/openAI');
 const { generateImage } = require('../ai/imageGeneration');
 const BookGeneratedContent = require("../../models/bookGeneratedContentModel.js");
+const instructionModel = require('../../models/instructionModel.js');
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -92,12 +94,12 @@ const getAllBooks = async (options = {}) => {
         const sortObj = { [sort]: order === 'desc' ? -1 : 1 };
 
         const books = await Book.find(query)
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit)
-        .populate('authors', 'authorName')
-        .populate('tags', 'name')
-        .populate('genres', 'title');
+            .sort(sortObj)
+            .skip(skip)
+            .limit(limit)
+            .populate('authors', 'authorName')
+            .populate('tags', 'name')
+            .populate('genres', 'title');
 
         const total = await Book.countDocuments(query);
         const totalPages = Math.ceil(total / limit);
@@ -139,23 +141,59 @@ const getBookById = async (bookId) => {
     }
 };
 
-const getBookWithChaptersById = async (bookId) => {
+const getBookWithChaptersById = async (bookId, userId) => {
     try {
+        console.log("User Id ====> ", userId)
         const book = await Book.findOne({ _id: bookId })
-            .populate('authors')
-            .populate('tags')
-            .populate('spiceLevels')
-            .populate('locations')
-            .populate('plots')
-            .populate('narrative')
-            .populate('endings')
-            .populate('genres');
+            .select("_id title tags  spiceLevels description views dummy_views readtime")
+            .populate({
+                path: "tags",
+                select: "_id name"
+            })
+            .populate({
+                path: "spiceLevels",
+                select: "_id comboName"
+            })
 
-        const bookChapters = await BookChapter.find({ book: bookId })
-
-        console.log(bookChapters)
-        let response = { ...book.toObject(), bookChapters }
         if (!book) throw new ApiError(404, 'Book not found');
+
+        const isExisted = await BookViews.findOne({ book: book._id })
+        if (isExisted) {
+
+            const isViewed = await BookViews.findOne({ book: book._id, "readers.user": userId })
+            if (isViewed) {
+                logger.info("book is viewed by the user with user id : ", userId)
+            }
+            else {
+                isExisted.readers.push({ user: userId })
+                book.views += 1
+                await book.save()
+                await isExisted.save()
+
+            }
+        }
+        else {
+            const newView = new BookViews({
+                book: bookId
+            })
+
+            newView.readers.push({ user: userId })
+            book.views += 1
+            await book.save()
+            await newView.save()
+        }
+
+        let response = {
+            _id: book._id,
+            title: book.title,
+            description: book.description,
+            spiceLevels: book.spiceLevels[0].comboName,
+            tags: book.tags,
+            views: book.views,
+            readtime: book.readtime,
+            dummy_views: book.dummy_views
+        }
+
         return response;
     } catch (error) {
         logger.error('Get book by ID error:', error.message);
@@ -300,8 +338,25 @@ async function generateAndUpdateTitle(bookId) {
         const designStyle = book.authors?.[0]?.designStyle ?? '';
         const genreDesc = book.genres?.[0]?.description ?? '';
 
-        const coverPrompt = `Design a book cover with the title "${newTitle}" at the top and the author "${authorName}" at the bottom. Depict ${book.description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
-            .replace(/\s+/g, ' ').trim();
+
+        const variables = {
+            newTitle: newTitle,
+            authorName: authorName,
+            bookDescription: book.description,
+            designStyle: designStyle,
+            genreDesc: genreDesc
+        };
+
+        const prompt = await instructionModel.findOne({ name: "Book Cover" })
+        const templateText = extractInstructionText(prompt, 'CoverImageGeneration');
+
+        const coverPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
+
+        console.log('User prompt (Book Cover):');
+        console.log(coverPrompt);
+
+        // const coverPrompt = `Design a book cover with the title "${newTitle}" at the top and the author "${authorName}" at the bottom. Depict ${book.description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
+        //     .replace(/\s+/g, ' ').trim();
 
         const { ideogramUrl, s3Url } = await generateImage(coverPrompt);
         if (!newTitle) {

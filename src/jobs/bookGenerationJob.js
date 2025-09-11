@@ -3,11 +3,12 @@ const Book = require('../models/bookModel');
 const BookGeneratedContent = require('../models/bookGeneratedContentModel');
 const BookChapter = require('../models/bookChapterModel');
 const TagsModal = require('../models/tagModel.js')
-const { generateBookTitles, generateBookDescription, generateBookChapters, OpenAIParseError, generateBookCoverPrompt, generateBookTags } = require('../services/ai/openAI');
+const { generateBookTitles, generateBookDescription, generateBookChapters, OpenAIParseError, generateBookCoverPrompt, generateBookTags, extractInstructionText } = require('../services/ai/openAI');
 const jobService = require('../services/jobService');
 const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const { generateImage } = require('../services/ai/imageGeneration');
+const instructionModel = require('../models/instructionModel.js');
 
 require('../models/genreModel');
 require('../models/plotModel');
@@ -782,8 +783,24 @@ const processBookCoverGeneration = async (bookId) => {
         const designStyle = book.authors?.[0]?.designStyle ?? '';
         const genreDesc = book.genres?.[0]?.description ?? '';
 
-        const coverPrompt = `Design a book cover with the title "${book.title}" at the top and the author "${authorName}" at the bottom. Depict ${description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
-            .replace(/\s+/g, ' ').trim();
+        const variables = {
+            newTitle: book.title,
+            authorName: authorName,
+            bookDescription: book.description,
+            designStyle: designStyle,
+            genreDesc: genreDesc
+        };
+
+          const prompt = await instructionModel.findOne({ name: "Book Cover" })
+        const templateText = extractInstructionText(prompt, 'CoverImageGeneration');
+
+        const coverPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
+
+        console.log('User prompt (Book Cover):');
+        console.log(coverPrompt);
+
+        // const coverPrompt = `Design a book cover with the title "${book.title}" at the top and the author "${authorName}" at the bottom. Depict ${description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
+        //     .replace(/\s+/g, ' ').trim();
 
         await book.updateOne({ 'generationStatus.cover.status': 'in_progress' }, { session });
         const { ideogramUrl, s3Url } = await generateImage(coverPrompt);
@@ -881,9 +898,25 @@ const regenerateBookCovers = async (batchId) => {
                 const designStyle = book.authors?.[0]?.designStyle ?? '';
                 const genreDesc = book.genres?.[0]?.description ?? '';
 
-                const coverPrompt = `Design a book cover with the title "${book.title}" at the top and the author "${authorName}" at the bottom. Depict ${description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
-                    .replace(/\s+/g, ' ')
-                    .trim();
+                const variables = {
+                    newTitle: book.title,
+                    authorName: authorName,
+                    bookDescription: book.description,
+                    designStyle: designStyle,
+                    genreDesc: genreDesc
+                };
+
+                const prompt = await instructionModel.findOne({ name: "Book Cover" })
+                const templateText = extractInstructionText(prompt, 'CoverImageGeneration');
+
+                const coverPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
+
+                console.log('User prompt (Book Cover):');
+                console.log(coverPrompt);
+
+                // const coverPrompt = `Design a book cover with the title "${book.title}" at the top and the author "${authorName}" at the bottom. Depict ${description}. Apply ${designStyle} (this includes both artwork style and typography direction). Apply ${genreDesc}.`
+                //     .replace(/\s+/g, ' ')
+                //     .trim();
 
                 await book.updateOne(
                     { 'generationStatus.cover.status': 'in_progress' },

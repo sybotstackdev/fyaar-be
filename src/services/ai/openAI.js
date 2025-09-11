@@ -84,7 +84,7 @@ const generateChatCompletion = async (systemPrompt, userPrompt, model = 'gpt-4o-
  */
 const generateBookTitles = async (storyDescription, genreLayer) => {
   const prompt = await instructionModel.findOne({ name: "Book Title" })
-  const systemPrompt = extractInstructionText(prompt, 'BookTitleSystem');
+  const systemPrompt = extractInstructionText(prompt, 'TitleSystemInstructions');
 
   //   const userPrompt = `
   //   ${extractInstructionText(prompt, 'BookTitleUser')}
@@ -97,7 +97,7 @@ const generateBookTitles = async (storyDescription, genreLayer) => {
   };
 
 
-  const templateText = extractInstructionText(prompt, 'BookTitleUser');
+  const templateText = extractInstructionText(prompt, 'TitleUserInstructions');
 
   const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
@@ -132,7 +132,7 @@ const generateBookTitles = async (storyDescription, genreLayer) => {
  */
 const generateBookTags = async (storyDescription, genreLayer, spiceLevel, ending) => {
   const prompt = await instructionModel.findOne({ name: "Book Tags" })
-  const systemPrompt = extractInstructionText(prompt, 'BookTagsSystem');
+  const systemPrompt = extractInstructionText(prompt, 'TagsSystemInstructions');
 
   const variables = {
     storyDescription: storyDescription,
@@ -150,7 +150,7 @@ const generateBookTags = async (storyDescription, genreLayer, spiceLevel, ending
   // [ENDING_TYPE : ${ending}]  `;
 
 
-  const templateText = extractInstructionText(prompt, 'BookTagsUser');
+  const templateText = extractInstructionText(prompt, 'TagsUserInstructions');
 
   const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
@@ -186,7 +186,7 @@ const generateBookDescription = async (promptData) => {
   const { title, genre, variant, location, characters, trope_description, chapter_summaries } = promptData;
   const prompt = await instructionModel.findOne({ name: "Book Description" })
 
-  const systemPrompt = extractInstructionText(prompt, 'BookDescriptionSystem');
+  const systemPrompt = extractInstructionText(prompt, 'DescriptionSystemInstructions');
 
   //   const userPrompt = `
   // INPUT
@@ -211,7 +211,7 @@ const generateBookDescription = async (promptData) => {
     characters: characters
   };
 
-  const templateText = extractInstructionText(prompt, 'BookDescriptionUser');
+  const templateText = extractInstructionText(prompt, 'DescriptionUserInstructions');
 
   const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
@@ -232,7 +232,7 @@ const generateBookDescription = async (promptData) => {
 const generateBookChapters = async (promptData) => {
   const { title, trope_name, trope_description, chapter_beats, narrative, spice_level, ending_type, location, characters } = promptData;
   const prompt = await instructionModel.findOne({ name: "Book Chapters" })
-  const systemPrompt = extractInstructionText(prompt, 'BookChaptersSystem');
+  const systemPrompt = extractInstructionText(prompt, 'ChaptersSystemInstructions');
 
 
   //   const userPrompt = `INPUT
@@ -261,7 +261,7 @@ const generateBookChapters = async (promptData) => {
     characters: characters
   };
 
-  const templateText = extractInstructionText(prompt, 'BookChaptersUser');
+  const templateText = extractInstructionText(prompt, 'ChaptersUserInstructions');
 
   const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
@@ -317,7 +317,7 @@ const generateBookCoverPrompt = async (promptData) => {
 // Do not reference art style, colors, or typography.  
 // Output only the scene description, no extra commentary.`;
 
-  const templateText = extractInstructionText(prompt, 'Book Cover');
+  const templateText = extractInstructionText(prompt, 'CoverPromptGeneration');
 
   const userPrompt = new Function(...Object.keys(variables), `return \`${templateText}\`;`)(...Object.values(variables));
 
@@ -338,5 +338,6 @@ module.exports = {
   generateBookChapters,
   generateBookCoverPrompt,
   generateBookTags,
+  extractInstructionText,
   OpenAIParseError
 };
