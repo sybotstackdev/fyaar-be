@@ -9,7 +9,6 @@ const {
   toggleGenreStatus
 } = require('../controllers/genreController');
 const { authenticate, authorize } = require('../middleware/auth');
-const genreVariantRoutes = require('./genreVariantRoutes');
 
 const {
   validateGenre,
@@ -18,7 +17,6 @@ const {
 } = require('../middleware/validator');
 
 const router = express.Router();
-router.use('/:genreId/variants', genreVariantRoutes);
 
 
 router.get('/slug/:slug', getGenreBySlug);

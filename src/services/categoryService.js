@@ -135,7 +135,7 @@ const getCategoryById = async (id) => {
                 select: 'title bookCover'
             });
 
-            console.log(categoryBooks)
+        console.log(categoryBooks)
 
         category.books = categoryBooks.map(cb => ({
             book: cb.book,
@@ -156,30 +156,58 @@ const getCategoryById = async (id) => {
  * @returns {Object} The updated category.
  */
 const updateCategory = async (id, updateData) => {
-    const { name } = updateData;
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
     try {
-        const category = await Category.findById(id);
+        const { name, books = [] } = updateData;
+
+        // ✅ Update category itself
+        const category = await Category.findOneAndUpdate(
+            { _id: id },
+            { name }, // update only what you need
+            { new: true, session }
+        );
+
         if (!category) {
-            throw new ApiError(404, 'Category not found.');
+            throw new ApiError(404, "Category not found.");
         }
 
-        if (name && name !== category.name) {
-            const existingCategory = await Category.findOne({ name });
-            if (existingCategory && existingCategory._id.toString() !== id) {
-                throw new ApiError(400, 'A category with this name already exists.');
+        // ✅ Handle CategoryBook ordering
+        // Remove old associations for this category
+        await CategoryBook.deleteMany({ category: id }).session(session);
+
+        if (books.length > 0) {
+            // Validate books
+            const existingBooksCount = await Book.countDocuments({ _id: { $in: books } }).session(session);
+            if (existingBooksCount !== books.length) {
+                throw new ApiError(400, "One or more provided book IDs are invalid.");
             }
-            category.name = name;
-            await category.save();
+
+            // Insert new ones with order
+            const categoryBookEntries = books.map((bookId, index) => ({
+                category: id,
+                book: bookId,
+                order: index + 1
+            }));
+
+            await CategoryBook.insertMany(categoryBookEntries, { session });
         }
+
+        await session.commitTransaction();
 
         logger.info(`Category updated successfully: ${category.name}`);
         return getCategoryById(id);
+
     } catch (error) {
+        await session.abortTransaction();
         logger.error(`Category update for id ${id} failed:`, error.message);
         throw error;
+    } finally {
+        session.endSession();
     }
 };
+
 
 /**
  * Permanently delete a category and its book associations.

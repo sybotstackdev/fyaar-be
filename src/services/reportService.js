@@ -56,25 +56,61 @@ const createReport = async (payload, user) => {
 /**
  * Get all reports (Admin use)
  */
-const getAllReports = async () => {
+const getAllReports = async (query) => {
     try {
-        const reports = await Report.find()
-            .populate("book", "title")
+        let { page = 1, limit = 10, search = "" } = query;
 
+        page = parseInt(page);
+        limit = parseInt(limit);
+
+        // Search condition
+        const searchFilter = search
+            ? {
+                $or: [
+                    { 'book.title': { $regex: search, $options: "i" } }, // search in book title
+                    { report: { $regex: search, $options: "i" } }, // example: search in report description
+                ],
+            }
+            : {};
+
+        // Count total reports (before pagination)
+        const totalReports = await Report.countDocuments(searchFilter);
+
+        // Fetch reports with pagination + search
+        const reports = await Report.find(searchFilter)
+            .populate("book", "title")
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .sort({ createdAt: -1 }); // optional: sort newest first
+
+        const totalPages = Math.ceil(totalReports / limit);
+        const hasNext = page < totalPages;
+        const hasPrev = page > 1;
         return {
             success: true,
             status: 200,
             message: "Reports fetched successfully",
-            data: reports
-        }
+            data: {
+                data: reports,
+                pagination: {
+                    page,
+                    limit,
+                    total: totalReports,
+                    totalPages,
+                    hasNext,
+                    hasPrev
+                }
+            }
+        };
     } catch (err) {
         return {
             success: false,
             status: 500,
-            message: err.message || "Error fetching reports"
-        }
+            message: err.message || "Error fetching reports",
+        };
     }
-}
+};
+
 
 /**
  * Get single report by ID
@@ -99,6 +135,12 @@ const getSingleReport = async (reportId) => {
                 message: "Report not found"
             }
         }
+
+        if (report.isRead !== true) {
+            report.isRead = true
+            await report.save()
+        }
+
 
         return {
             success: true,
