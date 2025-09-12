@@ -11,10 +11,11 @@ const genreVariantModel = new mongoose.Schema({
         required: [true, 'Description is required'],
         trim: true
     },
-    genre: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Genre',
-        required: true
+    relation: {
+        type: String,
+        required: [true, 'Name is required'],
+        enum : ["Title" , "Description"],
+        default : "Title"
     }
 }, {
     timestamps: true,

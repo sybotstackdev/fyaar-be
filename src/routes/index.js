@@ -20,6 +20,7 @@ const bookBatchRoutes = require('./admin/bookBatchRoutes');
 const dashboardRoutes = require('./admin/dashboardRoutes.js')
 const bookmarkRoutes = require('./bookmarkRoutes.js')
 const ReportRoutes = require('./reportRoutes.js')
+const VariantsRoutes = require('./variantsRoutes.js')
 
 const router = express.Router();
 
@@ -56,6 +57,7 @@ router.use('/batches', bookBatchRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/bookmark', bookmarkRoutes);
 router.use('/report' , ReportRoutes)
+router.use('/variants' , VariantsRoutes)
 
 // 404 handler for API routes
 router.use('*', (req, res) => {

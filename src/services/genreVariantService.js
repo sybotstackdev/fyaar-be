@@ -3,55 +3,47 @@ const Genre = require('../models/genreModel');
 const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
 
-const checkGenreExists = async (genreId) => {
-  const genre = await Genre.findById(genreId);
-  if (!genre) {
-    throw new ApiError(404, 'Parent genre not found');
+const getGenreVariants = async (params) => {
+  try {
+    const { page = 1, limit = 10, search = "" } = params;
+
+    const query = {};
+    if (search) {
+      query.name = { $regex: search, $options: "i" }; // optional search
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Fetch paginated data
+    const variants = await GenreVariant.find(query)
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    // Total count for pagination
+    const total = await GenreVariant.countDocuments(query);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data: variants,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total,
+        totalPages,
+        hasNext,
+        hasPrev
+      },
+    };
+  } catch (error) {
+    throw new Error("Error fetching genre variants: " + error.message);
   }
 };
 
-const getVariantById = async (genreId, variantId) => {
-  await checkGenreExists(genreId);
-  const variant = await GenreVariant.findOne({ _id: variantId, genre: genreId });
-  if (!variant) {
-    throw new ApiError(404, 'Genre variant not found or does not belong to this genre');
-  }
-  return variant;
-};
-
-const createGenreVariant = async (genreId, variantData) => {
-  await checkGenreExists(genreId);
-
-  const newVariant = new GenreVariant({
-    ...variantData,
-    genre: genreId // Set genre from the URL parameter
-  });
-
-  await newVariant.save();
-  logger.info(`New genre variant created for genre ${genreId}`);
-  return newVariant;
-};
-
-const updateGenreVariant = async (genreId, variantId, updateData) => {
-  const variant = await getVariantById(genreId, variantId);
-
-  Object.assign(variant, updateData);
-  await variant.save();
-
-  logger.info(`Genre variant ${variantId} updated`);
-  return variant;
-};
-
-const deleteGenreVariant = async (genreId, variantId) => {
-  const variant = await getVariantById(genreId, variantId);
-  await variant.deleteOne();
-  logger.info(`Genre variant ${variantId} deleted`);
-  return null;
-};
 
 module.exports = {
-  createGenreVariant,
-  updateGenreVariant,
-  deleteGenreVariant,
-  getVariantById
+  getGenreVariants,
 };
