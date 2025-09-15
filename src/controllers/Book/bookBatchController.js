@@ -19,7 +19,7 @@ const createBookBatch = asyncHandler(async (req, res) => {
  */
 const UpdateBookBatch = asyncHandler(async (req, res) => {
     const newBatch = await BookBatchService.updateBookBatch(req.params.id, req.user._id);
-    return ApiResponse.success(res, 201, 'Book batch Updated successfully', newBatch);
+    return ApiResponse.success(res, 201, 'Book batch Regenaration Started successfully', newBatch);
 });
 
 

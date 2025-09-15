@@ -68,10 +68,10 @@ const updateBookBatch = async (batchId, userId) => {
         throw new ApiError(404, 'Book batch not found.');
     }
 
-    // ✅ Ensure only owner can update
-    if (batch.userId.toString() !== userId.toString()) {
-        throw new ApiError(403, 'You are not authorized to update this batch.');
-    }
+    // // ✅ Ensure only owner can update
+    // if (batch.userId.toString() !== userId.toString()) {
+    //     throw new ApiError(403, 'You are not authorized to update this batch.');
+    // }
 
     // 🔹 Find only books that are NOT completed
     const booksToRetry = await Book.find({
